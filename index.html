@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motoristas Particulares em Porto Seguro</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVtPcveDQB12NmuJvy8LGuVN52vczb47E&libraries=places,geometry" defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #4CAF50;
+        }
+        label {
+            display: block;
+            margin: 10px 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        input, button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            box-sizing: border-box;
+        }
+        input {
+            background-color: #333;
+            color: #fff;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #map {
+            width: 80%;
+            height: 250px;
+            margin: 20px auto;
+        }
+        h3 {
+            font-size: 18px;
+            color: #333;
+        }
+        #botaoWhatsapp {
+            background-color: #25D366;
+        }
+        #botaoWhatsapp:hover {
+            background-color: #128C7E;
+        }
+        .valores-justos {
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .info-laterais {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: 20%;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 0;
+        }
+        .info-laterais h3 {
+            font-size: 18px;
+            color: #fff;
+        }
+        .info-laterais p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .info-laterais .titulo {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .info-laterais.left {
+            left: 0;
+        }
+        .info-laterais.right {
+            right: 0;
+        }
+        .informacoes-adicionais p {
+            color: black;
+            font-size: 14px;
+        }
+        .Para sua Segurança e Conforto p {
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Motoristas Particulares em Porto Seguro</h2>
+        <div class="informacoes-adicionais">
+            <p>Os valores informados consideram o tempo perdido em lentidões e engarrafamentos.</p>
+            <p>O valor apresentado reflete a qualidade do serviço oferecido.</p>
+            <p>O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</p>
+        </div>
+        <label>Origem:</label>
+        <input type="text" id="origem" placeholder="Obtendo localização..." disabled>
+        
+        <label>Destino:</label>
+        <input type="text" id="destino" placeholder="Digite o destino" oninput="habilitarCalcular()">
+        
+        <button onclick="calcularRota()" id="botaoCalcular" disabled>Calcular</button>
+        <h3 id="resultado">Custo total: R$ 0,00</h3>
+        <button id="botaoWhatsapp" style="display:none;" onclick="enviarWhatsapp()">Contactar via WhatsApp</button>
+        
+        <div class="Para sua Segurança e Conforto">
+            <h3>Para sua Segurança e Conforto</h3>
+            <p><strong>Veículos limpos.</strong></p>
+            <p><strong>Ar Condicionado Ligado.</strong></p>
+            <p><strong>Cuidado e Atenção durante o Trajeto.</strong></p>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+        let map, directionsService, directionsRenderer, custoFinal = 0, tempoFinal = 0;
+        let origemLatLng, destinoLatLng, enderecoOrigem;
+        let autocompleteDestino;
+
+        function habilitarCalcular() {
+            let origem = document.getElementById('origem').value;
+            let destino = document.getElementById('destino').value;
+            document.getElementById('botaoCalcular').disabled = !(origem && destino);
+        }
+
+        function calcularRota() {
+            if (!origemLatLng || !destinoLatLng) {
+                alert("Por favor, defina tanto a origem quanto o destino.");
+                return;
+            }
+
+            directionsService.route({
+                origin: origemLatLng,
+                destination: destinoLatLng,
+                travelMode: 'DRIVING',
+            }, (response, status) => {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(response);
+
+                    let tempo = response.routes[0].legs[0].duration.value / 60;
+                    let distancia = response.routes[0].legs[0].distance.value / 1000;
+
+                    calcularCusto(tempo, distancia);
+                } else {
+                    alert('Erro ao calcular a rota: ' + status);
+                }
+            });
+        }
+
+        function calcularCusto(tempo, distancia) {
+            let valorInicial = 5.00;
+            let valorPorMinuto = 0.75;
+            let valorPorKm = 2.00;
+            let adicional = 0;
+            
+            let agora = new Date();
+            let hora = agora.getHours();
+            if (hora >= 18 || hora < 6) {
+                adicional = 0.20;
+            }
+            
+            custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
+            custoFinal *= (1 + adicional);
+            tempoFinal = tempo;
+            
+            document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
+            document.getElementById('botaoWhatsapp').style.display = "block";
+        }
+
+        function enviarWhatsapp() {
+            let origem = enderecoOrigem || "Localização não definida";
+            let destino = document.getElementById('destino').value || "Destino não informado";
+            let agora = new Date();
+            let horario = agora.toLocaleTimeString();
+
+            let linkGoogleMaps = `https://www.google.com/maps?q=${origemLatLng.lat()},${origemLatLng.lng()}`;
+
+            let mensagem = `Olá, gostaria de solicitar uma viagem!%0A🚗 *Detalhes da Viagem*:%0A📍 Origem: ${origem}%0A📍 Destino: ${destino}%0A🕒 Horário: ${horario}%0A⏳ Tempo estimado: ${tempoFinal.toFixed(2)} min%0A💰 Custo estimado: R$ ${custoFinal.toFixed(2)}%0A%0A📍 *Localização do Passageiro*: ${linkGoogleMaps}`;
+
+            let telefone = "5573991411401";
+            let link = `https://api.whatsapp.com/send?phone=${telefone}&text=${mensagem}`;
+            window.open(link, '_blank');
+        }
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 15,
+                center: {lat: -23.55052, lng: -46.633308},
+                styles: []
+            });
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+            });
+
+            let inputDestino = document.getElementById('destino');
+            autocompleteDestino = new google.maps.places.Autocomplete(inputDestino);
+            autocompleteDestino.setFields(['geometry', 'name']);
+
+            autocompleteDestino.addListener('place_changed', () => {
+                let place = autocompleteDestino.getPlace();
+                if (!place.geometry) {
+                    return;
+                }
+                destinoLatLng = place.geometry.location;
+            });
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                    let geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({'location': origemLatLng}, (results, status) => {
+                        if (status === 'OK') {
+                            enderecoOrigem = results[0].formatted_address;
+                            document.getElementById('origem').value = enderecoOrigem;
+
+                            // Atualiza o centro do mapa para a localização do usuário
+                            map.setCenter(origemLatLng);
+                        }
+                    });
+                });
+            }
+        }
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>
