@@ -111,14 +111,25 @@
         .info-laterais.right {
             right: 0;
         }
+        /* Estilo do botão para Arraial */
+        #botaoArraial {
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #botaoArraial:hover {
+            background-color: #e67e22;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
         <div class="informacoes-adicionais">
+            <p>Os valores informados consideram o tempo perdido em lentidões e engarrafamentos.</p>
             <p>O valor apresentado reflete a qualidade do serviço oferecido.</p>
-            <p>Os valores informados consideram o tempo em lentidões e engarrafamentos.</p>
             <p>O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</p>
         </div>
 
@@ -127,6 +138,9 @@
         
         <label>Destino:</label>
         <input type="text" id="destino" placeholder="Digite o destino" oninput="habilitarCalcular()">
+        
+        <!-- Botão de Arraial acima do botão Calcular -->
+        <button onclick="alterarCustoArraial()" id="botaoArraial">Vai para Arraial? Clique aqui</button>
         
         <button onclick="calcularRota()" id="botaoCalcular" disabled>Calcular</button>
         <h3 id="resultado">Custo total: R$ 0,00</h3>
@@ -138,8 +152,6 @@
             <p><strong>Ar Condicionado Ligado.</p>
             <p><strong>Cuidado e Atenção durante o Trajeto.</p>
         </div>
-        
-        <button onclick="alterarCustoArraial()">Vai para Arraial? Clique aqui</button>
     </div>
 
     <div id="map"></div>
