@@ -111,14 +111,6 @@
         .info-laterais.right {
             right: 0;
         }
-        .informacoes-adicionais p {
-            color: black;
-            font-size: 14px;
-        }
-        .Para sua Segurança e Conforto p {
-            font-size: 14px;
-            color: #333;
-        }
     </style>
 </head>
 <body>
@@ -126,9 +118,10 @@
         <h2>Motoristas Particulares em Porto Seguro</h2>
         <div class="informacoes-adicionais">
             <p>O valor apresentado reflete a qualidade do serviço oferecido.</p>
-            <p>Também consideram o tempo em lentidões e engarrafamentos.</p>
+            <p>Os valores informados consideram o tempo em lentidões e engarrafamentos.</p>
             <p>O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</p>
         </div>
+
         <label>Origem:</label>
         <input type="text" id="origem" placeholder="Obtendo localização..." disabled>
         
@@ -141,10 +134,12 @@
         
         <div class="Para sua Segurança e Conforto">
             <h3>Para sua Segurança e Conforto</h3>
-            <p><strong>Veículos limpos.</strong></p>
-            <p><strong>Ar Condicionado Ligado.</strong></p>
-            <p><strong>Cuidado e Atenção durante o Trajeto.</strong></p>
+            <p><strong>Veículos limpos.</p>
+            <p><strong>Ar Condicionado Ligado.</p>
+            <p><strong>Cuidado e Atenção durante o Trajeto.</p>
         </div>
+        
+        <button onclick="alterarCustoArraial()">Vai para Arraial? Clique aqui</button>
     </div>
 
     <div id="map"></div>
@@ -153,6 +148,7 @@
         let map, directionsService, directionsRenderer, custoFinal = 0, tempoFinal = 0;
         let origemLatLng, destinoLatLng, enderecoOrigem;
         let autocompleteDestino;
+        let custoAdicionalArraial = 35.00; // valor atualizado para a travessia da balsa
 
         function habilitarCalcular() {
             let origem = document.getElementById('origem').value;
@@ -198,10 +194,18 @@
             
             custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
             custoFinal *= (1 + adicional);
+            custoFinal += custoAdicionalArraial; // Adiciona o custo da balsa, se for para Arraial
             tempoFinal = tempo;
             
             document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
             document.getElementById('botaoWhatsapp').style.display = "block";
+        }
+
+        function alterarCustoArraial() {
+            // Altera o valor da travessia para Arraial
+            custoAdicionalArraial = custoAdicionalArraial === 35.00 ? 0 : 35.00;
+            let status = custoAdicionalArraial === 35.00 ? 'Adicionado' : 'Removido';
+            alert(`Custo da travessia para Arraial foi ${status}.`);
         }
 
         function enviarWhatsapp() {
