@@ -14,6 +14,7 @@
             margin: 0;
             padding: 0;
             overflow-y: auto;
+            transition: background-color 0.5s ease;
         }
         .container {
             max-width: 500px;
@@ -122,6 +123,11 @@
         #botaoArraial:hover {
             background-color: #e67e22;
         }
+
+        /* Cor de fundo quando "Arraial" for ativado */
+        body.arraial {
+            background-color: #FFEB3B;
+        }
     </style>
 </head>
 <body>
@@ -161,6 +167,7 @@
         let origemLatLng, destinoLatLng, enderecoOrigem;
         let autocompleteDestino;
         let custoAdicionalArraial = 35.00; // valor atualizado para a travessia da balsa
+        let arraialAtivado = false; // Variável para verificar se a opção Arraial foi ativada
 
         function habilitarCalcular() {
             let origem = document.getElementById('origem').value;
@@ -214,10 +221,17 @@
         }
 
         function alterarCustoArraial() {
-            // Altera o valor da travessia para Arraial
-            custoAdicionalArraial = custoAdicionalArraial === 35.00 ? 0 : 35.00;
-            let status = custoAdicionalArraial === 35.00 ? 'Adicionado' : 'Removido';
-            alert(`Custo da travessia para Arraial foi ${status}.`);
+            arraialAtivado = !arraialAtivado; // Alterna o estado de "Vai para Arraial"
+            custoAdicionalArraial = arraialAtivado ? 35.00 : 0;
+
+            // Atualiza o texto do botão
+            let botaoArraial = document.getElementById('botaoArraial');
+            botaoArraial.innerText = arraialAtivado ? "Vou ficar em Porto Seguro" : "Vai para Arraial? Clique aqui";
+
+            // Altera a cor do fundo da página para indicar a ativação/desativação da opção Arraial
+            document.body.classList.toggle('arraial', arraialAtivado);
+
+            alert(`Custo da travessia para Arraial ${arraialAtivado ? 'adicionado' : 'removido'}.`);
         }
 
         function enviarWhatsapp() {
