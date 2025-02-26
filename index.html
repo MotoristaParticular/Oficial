@@ -256,38 +256,45 @@
         }
 
         function initMap() {
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: { lat: -16.442, lng: -39.059 },
-                zoom: 12,
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: -16.442, lng: -39.059 },
+        zoom: 12,
+    });
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer();
+    directionsRenderer.setMap(map);
+
+    // Autocomplete para o destino
+    autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
+    autocompleteDestino.bindTo('bounds', map);
+
+    // Obtendo a localização do usuário
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            const origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            const enderecoOrigem = `${position.coords.latitude}, ${position.coords.longitude}`;
+            document.getElementById('origem').value = enderecoOrigem;
+            map.setCenter(origemLatLng);
+            // Adiciona um marcador para a localização do usuário
+            new google.maps.Marker({
+                position: origemLatLng,
+                map: map,
+                title: "Sua Localização"
             });
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
-            directionsRenderer.setMap(map);
+        }, () => {
+            handleLocationError(true, map.getCenter());
+        });
+    } else {
+        handleLocationError(false, map.getCenter());
+    }
+}
 
-            // Autocomplete para o destino
-            autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
-            autocompleteDestino.bindTo('bounds', map);
+function handleLocationError(browserHasGeolocation, pos) {
+    alert(browserHasGeolocation ?
+        'Erro: O serviço de geolocalização falhou. Certifique-se de que a permissão está ativada.' :
+        'Erro: Seu navegador não suporta geolocalização.');
+}
 
-            // Obtendo a localização do usuário
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                    enderecoOrigem = `${position.coords.latitude}, ${position.coords.longitude}`;
-                    document.getElementById('origem').value = enderecoOrigem;
-                    map.setCenter(origemLatLng);
-                }, () => {
-                    handleLocationError(true, map.getCenter());
-                });
-            } else {
-                handleLocationError(false, map.getCenter());
-            }
-        }
-
-        function handleLocationError(browserHasGeolocation, pos) {
-            alert(browserHasGeolocation ? 
-                'Erro: O serviço de geolocalização falhou.' : 
-                'Erro: Seu navegador não suporta geolocalização.');
-        }
 
         window.onload = initMap;
     </script>
