@@ -127,6 +127,11 @@
         }
 
         function calcularRota() {
+            if (!origemLatLng) {
+                alert("Origem não definida. Aguarde até que a localização seja obtida.");
+                return;
+            }
+
             const destino = document.getElementById('destino').value;
 
             // Obtendo as coordenadas do destino usando a API do Mapbox
@@ -249,8 +254,8 @@
             let linkMapbox = `https://www.mapbox.com/directions/?point=${origemLatLng.lat},${origemLatLng.lng}&point=${destinoLatLng[1]},${destinoLatLng[0]}`;
 
             let mensagem = `Nova solicitação de viagem:\n\nOrigem: ${origem}\nDestino: ${destino}\nNúmero do WhatsApp: ${numeroWhatsApp}\nLink da Rota: ${linkMapbox}`;
-            let tokenTelegram = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk"; // Insira seu token
-            let idTelegram = "1212880208"; // Insira seu ID
+            let tokenTelegram = "SEU_TOKEN_AQUI"; // Insira seu token
+            let idTelegram = "SEU_ID_AQUI"; // Insira seu ID
 
             // Envio da mensagem para o Telegram
             fetch(`https://api.telegram.org/bot${tokenTelegram}/sendMessage`, {
@@ -307,14 +312,14 @@
                         enderecoOrigem = `${position.coords.latitude}, ${position.coords.longitude}`;
                         document.getElementById('origem').value = "Sua localização";
                         
-                        // Adiciona um marcador para a localização atual
-                        new mapboxgl.Marker()
-                            .setLngLat(origemLatLng)
-                            .addTo(map);
-
-                        calcularRota(); // Chama calcularRota para definir a origem
-                    }, () => {
-                        alert("Não foi possível obter a localização. Certifique-se de permitir acesso à geolocalização.");
+                        // Atualiza a origem no mapa
+                        new mapboxgl.Marker().setLngLat(origemLatLng).addTo(map);
+                        
+                        // Chama calcularRota somente após obter a origem
+                        calcularRota(); // Chama calcular rota após obter a origem
+                    }, (error) => {
+                        console.error("Erro ao obter localização:", error);
+                        alert("Não foi possível obter sua localização.");
                     });
                 } else {
                     alert("Geolocalização não suportada pelo seu navegador.");
@@ -322,7 +327,7 @@
             });
         }
 
-        window.onload = initMap; // Inicializa o mapa ao carregar a página
+        initMap();
     </script>
 </body>
 </html>
