@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motoristas Particulares em Porto Seguro</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVtPcveDQB12NmuJvy8LGuVN52vczb47E&libraries=places,geometry" defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBYxWbG2g-KmXmkSds0c75Qf8vlYF-aHAQ&libraries=places,geometry" defer></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -181,37 +181,37 @@
                 latLng.lng() < arraialBounds.east && latLng.lng() > arraialBounds.west;
         }
 
-        function enviarMensagemTelegram() {
+        function enviarMensagemTelegram() { 
             let origem = enderecoOrigem || "Localização não definida";
             let destino = document.getElementById('destino').value || "Destino não informado";
             let numeroWhatsApp = document.getElementById('whatsapp').value || "Número não informado";
             let linkGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${origemLatLng.lat()},${origemLatLng.lng()}&destination=${destinoLatLng.lat()},${destinoLatLng.lng()}`;
 
             let mensagem = `Nova solicitação de viagem:\n\nOrigem: ${origem}\nDestino: ${destino}\nNúmero do WhatsApp: ${numeroWhatsApp}\nLink da Rota: ${linkGoogleMaps}`;
-
             let tokenTelegram = "SEU_TOKEN_AQUI"; // Insira seu token
             let idTelegram = "SEU_ID_AQUI"; // Insira seu ID
 
-            fetch(`https://api.telegram.org/bot${tokenTelegram}/sendMessage`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    chat_id: idTelegram,
-                    text: mensagem,
-                    parse_mode: "HTML"
-                })
+        fetch(`https://api.telegram.org/bot${tokenTelegram}/sendMessage`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                chat_id: idTelegram,
+                text: mensagem,
+                parse_mode: "HTML"
             })
-            .then(response => {
-                if (response.ok) {
-                    iniciarContagemRegressiva();
-                } else {
-                    alert("Erro ao enviar a mensagem. Tente novamente.");
-                }
-            })
-            .catch(error => console.error("Erro:", error));
-        }
+        })
+        .then(response => {
+            if (response.ok) {
+                iniciarContagemRegressiva(); // Inicia a contagem regressiva após o envio bem-sucedido
+            } else {
+                alert("Erro ao enviar a mensagem. Tente novamente.");
+            }
+        })
+        .catch(error => console.error("Erro:", error));
+}
+
 
         function iniciarContagemRegressiva() {
             document.getElementById('timer').style.display = "block";
