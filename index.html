@@ -109,7 +109,7 @@
 
         <button onclick="calcularRota()" id="botaoCalcular" disabled>Calcular</button>
         <h3 id="resultado">Custo total: R$ 0,00</h3>
-        <div id="timer">Tempo máximo de resposta: <span id="timerValue">5:00</span></div>
+        <div id="timer">Em até 5 minutos responderemos sua solicitação: <span id="timerValue">5:00</span></div>
         <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Enviar Solicitação</button>
         
         <div class="Para sua Segurança e Conforto">
@@ -171,16 +171,19 @@
             if (hora >= 18 || hora < 6) {
                 adicional = 0.20;
             }
-            
-            custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
-            custoFinal *= (1 + adicional);
-            
+
             // Verifica se o destino está na área de Arraial d'Ajuda (exemplo simplificado)
             const arraialArea = new google.maps.LatLng(-16.500000, -39.066667); // Coordenadas aproximadas de Arraial d'Ajuda
             if (destinoLatLng && destinoLatLng.distance(origemLatLng) <= 5000) { // Distância em metros, exemplo: 5 km
-                custoFinal += 35.00; // Adiciona o custo da balsa
+                custoFinal = valorInicial + (30 * valorPorMinuto) + (distancia * valorPorKm) + 35.00; // Tempo inicial de 30 minutos
                 custoAdicionalArraial = 35.00;
+                tempoFinal = 30; // 30 minutos
+            } else {
+                custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
+                tempoFinal = tempo;
             }
+
+            custoFinal *= (1 + adicional);
             
             tempoFinal = tempo;
             document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
