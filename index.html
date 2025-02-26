@@ -122,9 +122,9 @@
         let custoFinal = 0, tempoFinal = 0;
 
         function habilitarCalcular() {
-            let origem = document.getElementById('origem').value;
             let destino = document.getElementById('destino').value;
-            document.getElementById('botaoCalcular').disabled = !(origem && destino);
+            // Verifica se a origem já foi definida
+            document.getElementById('botaoCalcular').disabled = !(origemLatLng && destino);
         }
 
         function calcularRota() {
