@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motoristas Particulares em Porto Seguro</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVtPcveDQB12NmuJvy8LGuVN52vczb47E&libraries=places,geometry" defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places,geometry" defer></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -118,9 +118,9 @@
 
     <script>
         let map, directionsService, directionsRenderer;
-        let origemLatLng, destinoLatLng, enderecoOrigem;
+        let origemLatLng, destinoLatLng, enderecoOrigem, enderecoDestino;
         let custoFinal = 0, tempoFinal = 0;
-        let autocompleteOrigem;
+        let autocompleteOrigem, autocompleteDestino;
 
         function habilitarCalcular() {
             let destino = document.getElementById('destino').value;
@@ -147,6 +147,24 @@
                         habilitarCalcular(); // Habilita o botão calcular
                     } else {
                         alert("Nenhum resultado encontrado para a origem.");
+                    }
+                });
+            }
+        }
+
+        function habilitarAutocompleteDestino() {
+            if (!autocompleteDestino) {
+                autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
+                autocompleteDestino.bindTo('bounds', map);
+
+                autocompleteDestino.addListener('place_changed', () => {
+                    const place = autocompleteDestino.getPlace();
+                    if (place.geometry) {
+                        destinoLatLng = place.geometry.location;
+                        enderecoDestino = place.formatted_address;
+                        habilitarCalcular(); // Habilita o botão calcular
+                    } else {
+                        alert("Nenhum resultado encontrado para o destino.");
                     }
                 });
             }
@@ -215,10 +233,10 @@
                 return;
             }
 
-            const botToken = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk"; 
-            const chatId = "1212880208";
+            const botToken = "YOUR_BOT_TOKEN"; 
+            const chatId = "YOUR_CHAT_ID";
 
-            const mensagem = `🚗 *Nova solicitação de viagem!*\n\n📍 *Origem:* ${enderecoOrigem}\n📍 *Destino:* ${document.getElementById('destino').value}\n💰 *Custo estimado:* R$ ${custoFinal.toFixed(2)}\n📱 *Número do WhatsApp:* ${whatsappNumber}`;
+            const mensagem = `🚗 *Nova solicitação de viagem!*\n\n📍 *Origem:* ${enderecoOrigem}\n📍 *Destino:* ${enderecoDestino}\n💰 *Custo estimado:* R$ ${custoFinal.toFixed(2)}\n📱 *Número do WhatsApp:* ${whatsappNumber}`;
 
             const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
@@ -267,9 +285,11 @@
             directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
 
+            // Autocomplete para a origem
+            habilitarAutocompleteOrigem();
+
             // Autocomplete para o destino
-            const autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
-            autocompleteDestino.bindTo('bounds', map);
+            habilitarAutocompleteDestino();
 
             // Obtendo a localização do usuário
             if (navigator.geolocation) {
