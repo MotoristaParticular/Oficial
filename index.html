@@ -279,8 +279,7 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
                     origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                    enderecoOrigem = `${position.coords.latitude}, ${position.coords.longitude}`;
-                    document.getElementById('origem').value = enderecoOrigem;
+                    obterEndereco(origemLatLng);
                     map.setCenter(origemLatLng);
                     // Adiciona um marcador para a localização do usuário
                     new google.maps.Marker({
@@ -294,6 +293,22 @@
             } else {
                 handleLocationError(false, map.getCenter());
             }
+        }
+
+        function obterEndereco(latLng) {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ 'location': latLng }, (results, status) => {
+                if (status === 'OK') {
+                    if (results[0]) {
+                        enderecoOrigem = results[0].formatted_address;
+                        document.getElementById('origem').value = enderecoOrigem;
+                    } else {
+                        alert('Nenhum resultado encontrado para a localização atual.');
+                    }
+                } else {
+                    alert('Geocoding falhou devido a: ' + status);
+                }
+            });
         }
 
         function handleLocationError(browserHasGeolocation, pos) {
