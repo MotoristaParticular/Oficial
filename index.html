@@ -23,18 +23,9 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            position: relative;
-            z-index: 1;
-            margin-bottom: 20px;
         }
         h2 {
             color: #4CAF50;
-        }
-        label {
-            display: block;
-            margin: 10px 0;
-            font-size: 16px;
-            font-weight: bold;
         }
         input, button {
             width: 100%;
@@ -45,14 +36,9 @@
             border: 1px solid #333;
             box-sizing: border-box;
         }
-        input {
-            background-color: #333;
-            color: #fff;
-        }
         button {
             background-color: #4CAF50;
             color: white;
-            border: none;
             cursor: pointer;
             transition: background-color 0.3s;
         }
@@ -64,80 +50,17 @@
             height: 250px;
             margin: 20px auto;
         }
-        h3 {
-            font-size: 18px;
-            color: #333;
-        }
         #botaoWhatsapp {
             background-color: #25D366;
         }
         #botaoWhatsapp:hover {
             background-color: #128C7E;
         }
-        .valores-justos {
-            margin-top: 20px;
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .info-laterais {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            width: 20%;
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            box-sizing: border-box;
-            z-index: 0;
-        }
-        .info-laterais h3 {
-            font-size: 18px;
-            color: #fff;
-        }
-        .info-laterais p {
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-        .info-laterais .titulo {
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-        .info-laterais.left {
-            left: 0;
-        }
-        .info-laterais.right {
-            right: 0;
-        }
-        /* Estilo do botão para Arraial */
-        #botaoArraial {
-            background-color: #f39c12;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        #botaoArraial:hover {
-            background-color: #e67e22;
-        }
-
-        /* Cor de fundo quando "Arraial" for ativado */
-        body.arraial {
-            background-color: #FFEB3B;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
-        <div class="informacoes-adicionais">
-            <p>Os valores informados consideram o tempo perdido em lentidões e engarrafamentos.</p>
-            <p>O valor apresentado reflete a qualidade do serviço oferecido.</p>
-            <p>O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</p>
-        </div>
 
         <label>Origem:</label>
         <input type="text" id="origem" placeholder="Obtendo localização..." disabled>
@@ -145,34 +68,25 @@
         <label>Destino:</label>
         <input type="text" id="destino" placeholder="Digite o destino" oninput="habilitarCalcular()">
         
-        <!-- Botão de Arraial acima do botão Calcular -->
         <button onclick="alterarCustoArraial()" id="botaoArraial">Vai para Arraial? Clique aqui</button>
-        
         <button onclick="calcularRota()" id="botaoCalcular" disabled>Calcular</button>
+        
         <h3 id="resultado">Custo total: R$ 0,00</h3>
         <button id="botaoWhatsapp" style="display:none;" onclick="enviarWhatsapp()">Contactar via WhatsApp</button>
-        
-        <div class="Para sua Segurança e Conforto">
-            <h3>Para sua Segurança e Conforto</h3>
-            <p><strong>Veículos limpos.</p>
-            <p><strong>Ar Condicionado Ligado.</p>
-            <p><strong>Cuidado e Atenção durante o Trajeto.</p>
-        </div>
     </div>
 
     <div id="map"></div>
 
     <script>
-        let map, directionsService, directionsRenderer, custoFinal = 0, tempoFinal = 0;
-        let origemLatLng, destinoLatLng, enderecoOrigem;
-        let autocompleteDestino;
-        let custoAdicionalArraial = 35.00; // valor atualizado para a travessia da balsa
-        let arraialAtivado = false; // Variável para verificar se a opção Arraial foi ativada
+        let map, directionsService, directionsRenderer;
+        let origemLatLng, destinoLatLng, enderecoOrigem = "";
+        let custoFinal = 0, tempoFinal = 0;
+        let custoAdicionalArraial = 0;
+        let arraialAtivado = false;
 
         function habilitarCalcular() {
-            let origem = document.getElementById('origem').value;
             let destino = document.getElementById('destino').value;
-            document.getElementById('botaoCalcular').disabled = !(origem && destino);
+            document.getElementById('botaoCalcular').disabled = !destino;
         }
 
         function calcularRota() {
@@ -188,10 +102,8 @@
             }, (response, status) => {
                 if (status === 'OK') {
                     directionsRenderer.setDirections(response);
-
                     let tempo = response.routes[0].legs[0].duration.value / 60;
                     let distancia = response.routes[0].legs[0].distance.value / 1000;
-
                     calcularCusto(tempo, distancia);
                 } else {
                     alert('Erro ao calcular a rota: ' + status);
@@ -200,93 +112,60 @@
         }
 
         function calcularCusto(tempo, distancia) {
-            let valorInicial = 5.00;
-            let valorPorMinuto = 0.75;
-            let valorPorKm = 2.00;
-            let adicional = 0;
-            
-            let agora = new Date();
-            let hora = agora.getHours();
-            if (hora >= 18 || hora < 6) {
-                adicional = 0.20;
-            }
-            
-            custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
+            let valorBase = 5.00, valorPorMinuto = 0.75, valorPorKm = 2.00;
+            let adicional = (new Date().getHours() >= 18 || new Date().getHours() < 6) ? 0.20 : 0;
+
+            custoFinal = valorBase + (tempo * valorPorMinuto) + (distancia * valorPorKm);
             custoFinal *= (1 + adicional);
-            custoFinal += custoAdicionalArraial; // Adiciona o custo da balsa, se for para Arraial
-            tempoFinal = tempo;
-            
+            if (arraialAtivado) custoFinal += 35.00;
+
             document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
             document.getElementById('botaoWhatsapp').style.display = "block";
+            enviarMensagemTelegram(enderecoOrigem, document.getElementById('destino').value, custoFinal);
         }
 
         function alterarCustoArraial() {
-            arraialAtivado = !arraialAtivado; // Alterna o estado de "Vai para Arraial"
-            custoAdicionalArraial = arraialAtivado ? 35.00 : 0;
-
-            // Atualiza o texto do botão
-            let botaoArraial = document.getElementById('botaoArraial');
-            botaoArraial.innerText = arraialAtivado ? "Vou ficar em Porto Seguro" : "Vai para Arraial? Clique aqui";
-
-            // Altera a cor do fundo da página para indicar a ativação/desativação da opção Arraial
-            document.body.classList.toggle('arraial', arraialAtivado);
-
-            alert(`Custo da travessia para Arraial ${arraialAtivado ? 'adicionado' : 'removido'}.`);
+            arraialAtivado = !arraialAtivado;
+            document.getElementById('botaoArraial').innerText = arraialAtivado ? "Vou ficar em Porto Seguro" : "Vai para Arraial? Clique aqui";
+            alert(`Custo da travessia ${arraialAtivado ? 'adicionado' : 'removido'}.`);
         }
 
         function enviarWhatsapp() {
-            let origem = enderecoOrigem || "Localização não definida";
             let destino = document.getElementById('destino').value || "Destino não informado";
-            let agora = new Date();
-            let horario = agora.toLocaleTimeString();
-
+            let horario = new Date().toLocaleTimeString();
             let linkGoogleMaps = `https://www.google.com/maps?q=${origemLatLng.lat()},${origemLatLng.lng()}`;
-
-            let mensagem = `Olá, gostaria de solicitar uma viagem!%0A🚗 *Detalhes da Viagem*:%0A📍 Origem: ${origem}%0A📍 Destino: ${destino}%0A🕒 Horário: ${horario}%0A⏳ Tempo estimado: ${tempoFinal.toFixed(2)} min%0A💰 Custo estimado: R$ ${custoFinal.toFixed(2)}%0A%0A📍 *Localização do Passageiro*: ${linkGoogleMaps}`;
-
+            let mensagem = `Olá, gostaria de solicitar uma viagem!%0A📍 Origem: ${enderecoOrigem || "Localização não detectada"}%0A📍 Destino: ${destino}%0A⏳ Tempo estimado: ${tempoFinal.toFixed(2)} min%0A💰 Custo estimado: R$ ${custoFinal.toFixed(2)}%0A📍 Localização do Passageiro: ${linkGoogleMaps}`;
             let telefone = "5573991411401";
-            let link = `https://api.whatsapp.com/send?phone=${telefone}&text=${mensagem}`;
-            window.open(link, '_blank');
+            window.open(`https://api.whatsapp.com/send?phone=${telefone}&text=${mensagem}`, '_blank');
+        }
+
+        function enviarMensagemTelegram(origem, destino, preco) {
+            if (!origem || !destino) return;
+            const botToken = "TOKEN_AQUI";
+            const chatId = "CHAT_ID_AQUI";
+            const mensagem = `🚗 *Nova solicitação de viagem!*%0A📍 *Origem:* ${origem}%0A📍 *Destino:* ${destino}%0A💰 *Custo:* R$ ${preco.toFixed(2)}`;
+            fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: chatId, text: mensagem, parse_mode: "Markdown" })
+            });
         }
 
         function initMap() {
-            map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 15,
-                center: {lat: -23.55052, lng: -46.633308},
-                styles: []
-            });
+            map = new google.maps.Map(document.getElementById('map'), { zoom: 15, center: { lat: -16.442, lng: -39.065 } });
             directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer({
-                map: map,
-            });
+            directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
             let inputDestino = document.getElementById('destino');
-            autocompleteDestino = new google.maps.places.Autocomplete(inputDestino);
-            autocompleteDestino.setFields(['geometry', 'name']);
+            let autocompleteDestino = new google.maps.places.Autocomplete(inputDestino);
+            autocompleteDestino.addListener('place_changed', () => destinoLatLng = autocompleteDestino.getPlace().geometry.location);
 
-            autocompleteDestino.addListener('place_changed', () => {
-                let place = autocompleteDestino.getPlace();
-                if (!place.geometry) {
-                    return;
-                }
-                destinoLatLng = place.geometry.location;
-            });
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                    let geocoder = new google.maps.Geocoder();
-                    geocoder.geocode({'location': origemLatLng}, (results, status) => {
-                        if (status === 'OK') {
-                            enderecoOrigem = results[0].formatted_address;
-                            document.getElementById('origem').value = enderecoOrigem;
-
-                            // Atualiza o centro do mapa para a localização do usuário
-                            map.setCenter(origemLatLng);
-                        }
-                    });
+            navigator.geolocation.getCurrentPosition(position => {
+                origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                new google.maps.Geocoder().geocode({ location: origemLatLng }, (results, status) => {
+                    if (status === 'OK') enderecoOrigem = results[0].formatted_address;
                 });
-            }
+            });
         }
 
         window.onload = initMap;
