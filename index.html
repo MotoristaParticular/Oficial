@@ -89,7 +89,7 @@
         <input type="text" id="origem" placeholder="Obtendo localização..." disabled>
         
         <label>Destino:</label>
-        <input type="text" id="destino" placeholder="Digite o destino" oninput="habilitarCalcular()">
+        <input type="text" id="destino" placeholder="Digite o destino">
         
         <label>Seu WhatsApp:</label>
         <input type="text" id="whatsapp" placeholder="Digite seu número de WhatsApp">
@@ -273,6 +273,7 @@
                     return;
                 }
                 destinoLatLng = place.geometry.location;
+                habilitarCalcular(); // Habilita o botão de calcular quando um destino válido é selecionado
             });
 
             if (navigator.geolocation) {
