@@ -109,104 +109,19 @@
     <div id="map"></div>
 
     <script>
-        let map, origemLatLng, destinoLatLng, enderecoOrigem;
-        let timer;
-        let tempoLimite = 300; // 5 minutos em segundos
-
-        // Configurações do Mapbox
-        mapboxgl.accessToken = 'pk.eyJ1IjoicmFwaGFtYWNlZG8iLCJhIjoiY203bWE5cmR4MGtlazJrcHM3ajI0ems0dyJ9.7kHw1-KpcSnC_qQyrspXIw'; // Token público
-
-        function habilitarCalcular() {
-            let origem = document.getElementById('origem').value;
-            let destino = document.getElementById('destino').value;
-            document.getElementById('botaoCalcular').disabled = !(origem && destino);
-        }
-
-        function habilitarAlterarOrigem() {
-            document.getElementById('origem').disabled = false;
-        }
-
-        function calcularRota() {
-            if (!origemLatLng) {
-                alert("Origem não definida. Aguarde até que a localização seja obtida.");
-                return;
-            }
-
-            const destino = document.getElementById('destino').value;
-
-            // Obtendo as coordenadas do destino usando a API do Mapbox
-            fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destino)}.json?access_token=${mapboxgl.accessToken}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Erro ao buscar coordenadas do destino.");
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.features && data.features.length > 0) {
-                        destinoLatLng = data.features[0].geometry.coordinates;
-                        const origem = `${origemLatLng.lng},${origemLatLng.lat}`;
-                        const destinoStr = `${destinoLatLng[0]},${destinoLatLng[1]}`;
-
-                        fetch(`https://api.mapbox.com/optimized-trips/v1/mapbox/driving/${origem};${destinoStr}?access_token=${mapboxgl.accessToken}`)
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error("Erro ao calcular a rota.");
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                if (data.routes && data.routes.length > 0) {
-                                    const route = data.routes[0];
-                                    const tempo = route.duration / 60; // em minutos
-                                    const distancia = route.distance / 1000; // em km
-                                    calcularCusto(tempo, distancia);
-
-                                    // Adiciona a rota ao mapa
-                                    const geojson = {
-                                        type: 'Feature',
-                                        geometry: {
-                                            type: 'LineString',
-                                            coordinates: route.geometry.coordinates
-                                        }
-                                    };
-
-                                    // Limpa camadas anteriores
-                                    map.getSource('rota') && map.removeLayer('rota');
-
-                                    // Adiciona a rota ao mapa
-                                    map.addLayer({
-                                        id: 'rota',
-                                        type: 'line',
-                                        source: {
-                                            type: 'geojson',
-                                            data: geojson
-                                        },
-                                        layout: {
-                                            'line-join': 'round',
-                                            'line-cap': 'round'
-                                        },
-                                        paint: {
-                                            'line-color': '#888',
-                                            'line-width': 8
-                                        }
-                                    });
-                                } else {
-                                    alert('Erro: Não foi possível encontrar uma rota.');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Erro ao calcular a rota:', error);
-                                alert('Erro ao calcular a rota: ' + error.message);
-                            });
-                    } else {
-                        alert('Destino não encontrado. Tente outro endereço.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar coordenadas do destino:', error);
-                    alert('Erro ao buscar coordenadas do destino: ' + error.message);
-                });
+        function iniciarContagemRegressiva() {
+            document.getElementById('timer').style.display = "block";
+            let contagemRegressiva = 300;
+            let timer = setInterval(() => {
+                let minutos = Math.floor(contagemRegressiva / 60);
+                let segundos = contagemRegressiva % 60;
+                document.getElementById('contagem-regressiva').innerText = `Tempo restante: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
+                contagemRegressiva--;
+                if (contagemRegressiva < 0) {
+                    clearInterval(timer);
+                    alert("O tempo para resposta expirou.");
+                }
+            }, 1000);
         }
 
         function calcularCusto(tempo, distancia) {
@@ -214,17 +129,14 @@
             let valorPorMinuto = 0.75;
             let valorPorKm = 2.00;
             let adicional = 0;
-
-            if (isArraial(destinoLatLng)) {
-                tempo += 30; // adiciona 30 minutos
-            }
-
             let agora = new Date();
             let hora = agora.getHours();
             if (hora >= 18 || hora < 6) {
                 adicional = 0.20;
             }
-
+            if (isArraial(destinoLatLng)) {
+                tempo += 30;
+            }
             let custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
             custoFinal *= (1 + adicional);
             document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
@@ -240,74 +152,26 @@
             };
             return latLng[1] < arraialBounds.north && latLng[1] > arraialBounds.south &&
                 latLng[0] < arraialBounds.east && latLng[0] > arraialBounds.west;
-        }
-
-        function enviarMensagemTelegram() { 
-            let origem = enderecoOrigem || "Localização não definida";
-            let destino = document.getElementById('destino').value || "Destino não informado";
-            let numeroWhatsApp = document.getElementById('whatsapp').value || "Número não informado";
-
-            // Validação do número do WhatsApp
-            const whatsappRegex = /^\d{10,15}$/; // Aceita números de 10 a 15 dígitos
-            if (!whatsappRegex.test(numeroWhatsApp)) {
-                alert("Por favor, insira um número de WhatsApp válido.");
-                return;
-            }
-
-            let linkMapbox = `https://www.mapbox.com/directions/?point=${origemLatLng.lat},${origemLatLng.lng}&point=${destinoLatLng[1]},${destinoLatLng[0]}`;
-
-            let mensagem = `Nova solicitação de viagem:\n\nOrigem: ${origem}\nDestino: ${destino}\nNúmero do WhatsApp: ${numeroWhatsApp}\nLink da Rota: ${linkMapbox}`;
-            let tokenTelegram = "SEU_TOKEN_AQUI"; // Insira seu token
-            let idTelegram = "SEU_ID_AQUI"; // Insira seu ID
-
-            // Envio da mensagem para o Telegram
-            fetch(`https://api.telegram.org/bot${tokenTelegram}/sendMessage`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    chat_id: idTelegram,
-                    text: mensagem,
-                    parse_mode: "HTML"
-                })
-            })
-            .then(response => {
+	function enviarMensagemTelegram() {
+            let origem = document.getElementById("origem").value;
+            let destino = document.getElementById("destino").value;
+            let custo = document.getElementById("resultado").innerText;
+            let whatsapp = document.getElementById("whatsapp").value;
+            let mapboxUrl = `https://www.google.com/maps/dir/${origem}/${destino}`;
+            let mensagem = `Nova solicitação de viagem:\nOrigem: ${origem}\nDestino: ${destino}\n${custo}\nWhatsApp: ${whatsapp}\nMapa: ${mapboxUrl}`;
+            
+            let botToken = '7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk';
+            let chatId = '1212880208';
+            let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(mensagem)}`;
+            
+            fetch(url).then(response => {
                 if (response.ok) {
-                    iniciarContagemRegressiva(); // Inicia a contagem regressiva após o envio bem-sucedido
+                    alert("Solicitação enviada com sucesso!");
+                    iniciarContagemRegressiva();
                 } else {
-                    alert("Erro ao enviar a mensagem. Tente novamente.");
+                    alert("Erro ao enviar solicitação.");
                 }
-            })
-            .catch(error => console.error("Erro:", error));
         }
-
-        function iniciarContagemRegressiva() {
-            document.getElementById('timer').style.display = "block";
-            let contagemRegressiva = tempoLimite;
-            timer = setInterval(() => {
-                let minutos = Math.floor(contagemRegressiva / 60);
-                let segundos = contagemRegressiva % 60;
-                document.getElementById('contagem-regressiva').innerText = `Tempo restante: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
-                contagemRegressiva--;
-                if (contagemRegressiva < 0) {
-                    clearInterval(timer);
-                    alert("O tempo para resposta expirou.");
-                }
-            }, 1000);
-        }
-
-        function initMap() {
-            map = new mapboxgl.Map({
-                container: 'map',
-                style: 'mapbox://styles/mapbox/streets-v11',
-                center: [-39.0603, -16.2564], // Centro de Porto Seguro
-                zoom: 12
-            });
-
-            map.on('load', function() {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((position) => {
-                        origemLatLng = {
-                            lat: position.coords.latitude,
-                            lng: position
+    </script>
+</body>
+</html>
