@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motoristas Particulares em Porto Seguro</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places,geometry" defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVtPcveDQB12NmuJvy8LGuVN52vczb47E&libraries=places,geometry" defer></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -233,8 +233,8 @@
                 return;
             }
 
-            const botToken = "YOUR_BOT_TOKEN"; 
-            const chatId = "YOUR_CHAT_ID";
+            const botToken = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk"; 
+            const chatId = "1212880208";
 
             const mensagem = `🚗 *Nova solicitação de viagem!*\n\n📍 *Origem:* ${enderecoOrigem}\n📍 *Destino:* ${enderecoDestino}\n💰 *Custo estimado:* R$ ${custoFinal.toFixed(2)}\n📱 *Número do WhatsApp:* ${whatsappNumber}`;
 
@@ -303,38 +303,23 @@
                         map: map,
                         title: "Sua Localização"
                     });
-                }, () => {
-                    handleLocationError(true, map.getCenter());
                 });
-            } else {
-                handleLocationError(false, map.getCenter());
             }
         }
 
         function obterEndereco(latLng) {
             const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ 'location': latLng }, (results, status) => {
-                if (status === 'OK') {
-                    if (results[0]) {
-                        enderecoOrigem = results[0].formatted_address;
-                        document.getElementById('origem').value = enderecoOrigem;
-                        habilitarCalcular(); // Habilita o botão calcular após obter a localização
-                    } else {
-                        alert('Nenhum resultado encontrado para a localização atual.');
-                    }
+            geocoder.geocode({ location: latLng }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    enderecoOrigem = results[0].formatted_address;
+                    document.getElementById('origem').value = enderecoOrigem;
                 } else {
-                    alert('Geocoding falhou devido a: ' + status);
+                    console.error('Erro ao obter endereço: ' + status);
                 }
             });
         }
 
-        function handleLocationError(browserHasGeolocation, pos) {
-            alert(browserHasGeolocation ?
-                'Erro: O serviço de geolocalização falhou. Certifique-se de que a permissão está ativada.' :
-                'Erro: Seu navegador não suporta geolocalização.');
-        }
-
-        window.onload = initMap; // Inicia o mapa ao carregar a página
+        window.onload = initMap;
     </script>
 </body>
 </html>
