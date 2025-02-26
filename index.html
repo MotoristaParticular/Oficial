@@ -82,12 +82,6 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        /* Estilo do timer */
-        #timer {
-            font-size: 20px;
-            color: red;
-            margin: 10px 0;
-        }
         .info-laterais {
             position: fixed;
             top: 0;
@@ -112,6 +106,10 @@
             font-size: 16px;
             margin-bottom: 15px;
         }
+        /* Cor de fundo quando "Arraial" for ativado */
+        body.arraial {
+            background-color: #FFEB3B;
+        }
     </style>
 </head>
 <body>
@@ -128,42 +126,34 @@
         
         <label>Destino:</label>
         <input type="text" id="destino" placeholder="Digite o destino" oninput="habilitarCalcular()">
-
-        <label>WhatsApp do Passageiro:</label>
-        <input type="text" id="whatsapp" placeholder="Digite seu número" maxlength="15" oninput="habilitarChamar()">
         
         <button onclick="calcularRota()" id="botaoCalcular" disabled>Calcular</button>
         <h3 id="resultado">Custo total: R$ 0,00</h3>
-        <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Enviar para Telegram</button>
+        <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Informar WhatsApp</button>
+        <input type="text" id="whatsapp" placeholder="Digite seu número do WhatsApp">
         
-        <div id="timer">Tempo máximo de resposta: <span id="contagemTempo">5:00</span></div>
         <div class="Para sua Segurança e Conforto">
             <h3>Para sua Segurança e Conforto</h3>
             <p><strong>Veículos limpos.</strong></p>
             <p><strong>Ar Condicionado Ligado.</strong></p>
             <p><strong>Cuidado e Atenção durante o Trajeto.</strong></p>
         </div>
+
+        <h3 id="timer"></h3>
+        <p>Em até 5 minutos responderemos sua solicitação.</p>
     </div>
 
     <div id="map"></div>
 
     <script>
         let map, directionsService, directionsRenderer;
-        let custoFinal = 0, tempoFinal = 0;
         let origemLatLng, destinoLatLng, enderecoOrigem;
-        let autocompleteDestino;
-        let timer;
-        let tempoMaximo = 300; // 5 minutos em segundos
+        let custoFinal = 0, tempoFinal = 0;
 
         function habilitarCalcular() {
             let origem = document.getElementById('origem').value;
             let destino = document.getElementById('destino').value;
             document.getElementById('botaoCalcular').disabled = !(origem && destino);
-        }
-
-        function habilitarChamar() {
-            let whatsapp = document.getElementById('whatsapp').value;
-            document.getElementById('botaoWhatsapp').style.display = whatsapp ? "block" : "none";
         }
 
         function calcularRota() {
@@ -179,13 +169,8 @@
             }, (response, status) => {
                 if (status === 'OK') {
                     directionsRenderer.setDirections(response);
-                    let tempo = response.routes[0].legs[0].duration.value / 60; // tempo em minutos
-                    let distancia = response.routes[0].legs[0].distance.value / 1000; // distancia em km
-
-                    // Verifica se o destino é Arraial d'Ajuda
-                    if (destino.toLowerCase().includes("arraial d'ajuda")) {
-                        tempo += 30; // adiciona 30 minutos
-                    }
+                    let tempo = response.routes[0].legs[0].duration.value / 60;
+                    let distancia = response.routes[0].legs[0].distance.value / 1000;
 
                     calcularCusto(tempo, distancia);
                 } else {
@@ -199,23 +184,45 @@
             let valorPorMinuto = 0.75;
             let valorPorKm = 2.00;
 
+            if (destinoLatLng && isArraial(destinoLatLng)) {
+                tempo += 30; // Adiciona 30 minutos se for para Arraial
+            }
+
             custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
             tempoFinal = tempo;
-
+            
             document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
             document.getElementById('botaoWhatsapp').style.display = "block";
 
-            // Iniciar o timer
             iniciarTimer();
-            enviarMensagemTelegram(enderecoOrigem, document.getElementById('destino').value, custoFinal);
         }
 
-        function enviarMensagemTelegram(origem, destino, preco) {
+        function isArraial(location) {
+            const arraialBounds = {
+                north: -16.446,
+                south: -16.450,
+                east: -39.058,
+                west: -39.063
+            };
+            return (
+                location.lat() >= arraialBounds.south &&
+                location.lat() <= arraialBounds.north &&
+                location.lng() >= arraialBounds.west &&
+                location.lng() <= arraialBounds.east
+            );
+        }
+
+        function enviarMensagemTelegram() {
+            const whatsappNumber = document.getElementById('whatsapp').value;
+            if (!whatsappNumber) {
+                alert('Por favor, informe seu número de WhatsApp.');
+                return;
+            }
+
             const botToken = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk"; 
             const chatId = "1212880208";
-            const whatsappNumero = document.getElementById('whatsapp').value;
 
-            const mensagem = `🚗 *Nova solicitação de viagem!*\n\n📍 *Origem:* ${origem}\n📍 *Destino:* ${destino}\n💰 *Custo estimado:* R$ ${preco.toFixed(2)}\n📱 *WhatsApp do Passageiro:* ${whatsappNumero}`;
+            const mensagem = `🚗 *Nova solicitação de viagem!*\n\n📍 *Origem:* ${enderecoOrigem}\n📍 *Destino:* ${document.getElementById('destino').value}\n💰 *Custo estimado:* R$ ${custoFinal.toFixed(2)}\n📱 *Número do WhatsApp:* ${whatsappNumber}`;
 
             const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
@@ -236,67 +243,64 @@
                     console.error("Erro ao enviar mensagem:", data);
                 }
             })
-            .catch(error => console.error("Erro na requisição:", error));
+            .catch(error => console.error("Erro na solicitação:", error));
         }
 
         function iniciarTimer() {
-            let contagemTempo = document.getElementById('contagemTempo');
-            timer = setInterval(() => {
-                tempoMaximo--;
-                const minutos = Math.floor(tempoMaximo / 60);
-                const segundos = tempoMaximo % 60;
-
-                contagemTempo.innerText = `${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
-
-                if (tempoMaximo <= 0) {
-                    clearInterval(timer);
-                    alert("O tempo máximo de resposta foi atingido.");
+            const timerElement = document.getElementById('timer');
+            let tempoRestante = 300; // 5 minutos em segundos
+            const interval = setInterval(() => {
+                if (tempoRestante <= 0) {
+                    clearInterval(interval);
+                    timerElement.innerText = "O tempo máximo de resposta foi alcançado.";
+                } else {
+                    const minutos = Math.floor(tempoRestante / 60);
+                    const segundos = tempoRestante % 60;
+                    timerElement.innerText = `Tempo restante: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
+                    tempoRestante--;
                 }
             }, 1000);
         }
 
         function initMap() {
-    map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: -16.442, lng: -39.059 },
-        zoom: 12,
-    });
-    directionsService = new google.maps.DirectionsService();
-    directionsRenderer = new google.maps.DirectionsRenderer();
-    directionsRenderer.setMap(map);
-
-    // Autocomplete para o destino
-    autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
-    autocompleteDestino.bindTo('bounds', map);
-
-    // Obtendo a localização do usuário
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
-            const origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-            const enderecoOrigem = `${position.coords.latitude}, ${position.coords.longitude}`;
-            document.getElementById('origem').value = enderecoOrigem;
-            map.setCenter(origemLatLng);
-            // Adiciona um marcador para a localização do usuário
-            new google.maps.Marker({
-                position: origemLatLng,
-                map: map,
-                title: "Sua Localização"
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: -16.442, lng: -39.059 },
+                zoom: 12,
             });
-        }, () => {
-            handleLocationError(true, map.getCenter());
-        });
-    } else {
-        handleLocationError(false, map.getCenter());
-    }
-}
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
 
-function handleLocationError(browserHasGeolocation, pos) {
-    alert(browserHasGeolocation ?
-        'Erro: O serviço de geolocalização falhou. Certifique-se de que a permissão está ativada.' :
-        'Erro: Seu navegador não suporta geolocalização.');
-}
+            // Autocomplete para o destino
+            const autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
+            autocompleteDestino.bindTo('bounds', map);
 
+            // Obtendo a localização do usuário
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                    enderecoOrigem = `${position.coords.latitude}, ${position.coords.longitude}`;
+                    document.getElementById('origem').value = enderecoOrigem;
+                    map.setCenter(origemLatLng);
+                    // Adiciona um marcador para a localização do usuário
+                    new google.maps.Marker({
+                        position: origemLatLng,
+                        map: map,
+                        title: "Sua Localização"
+                    });
+                }, () => {
+                    handleLocationError(true, map.getCenter());
+                });
+            } else {
+                handleLocationError(false, map.getCenter());
+            }
+        }
 
-        window.onload = initMap;
+        function handleLocationError(browserHasGeolocation, pos) {
+            alert(browserHasGeolocation ?
+                'Erro: O serviço de geolocalização falhou. Certifique-se de que a permissão está ativada.' :
+                'Erro: Seu navegador não suporta geolocalização.');
+        }
     </script>
 </body>
 </html>
