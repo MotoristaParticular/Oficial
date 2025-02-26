@@ -82,33 +82,11 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        .info-laterais {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            width: 20%;
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            box-sizing: border-box;
-            z-index: 0;
-        }
-        .info-laterais h3 {
+        /* Timer */
+        #timer {
+            margin-top: 20px;
             font-size: 18px;
-            color: #fff;
-        }
-        .info-laterais p {
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-        .info-laterais .titulo {
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-        /* Cor de fundo quando "Arraial" for ativado */
-        body.arraial {
-            background-color: #FFEB3B;
+            color: red;
         }
     </style>
 </head>
@@ -132,13 +110,6 @@
         <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Informar WhatsApp</button>
         <input type="text" id="whatsapp" placeholder="Digite seu número do WhatsApp">
         
-        <div class="Para sua Segurança e Conforto">
-            <h3>Para sua Segurança e Conforto</h3>
-            <p><strong>Veículos limpos.</strong></p>
-            <p><strong>Ar Condicionado Ligado.</strong></p>
-            <p><strong>Cuidado e Atenção durante o Trajeto.</strong></p>
-        </div>
-
         <h3 id="timer"></h3>
         <p>Em até 5 minutos responderemos sua solicitação.</p>
     </div>
@@ -316,6 +287,8 @@
                 'Erro: O serviço de geolocalização falhou. Certifique-se de que a permissão está ativada.' :
                 'Erro: Seu navegador não suporta geolocalização.');
         }
+
+        window.onload = initMap; // Inicia o mapa ao carregar a página
     </script>
 </body>
 </html>
