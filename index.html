@@ -146,8 +146,7 @@
 
         function calcularRota() {
             if (!origemLatLng || !destinoLatLng) {
-                alert("Por favor, defina tanto a origem quanto o destino.");
-                return;
+                return; // Não exibe a mensagem de erro ao entrar no site
             }
 
             directionsService.route({
@@ -207,7 +206,7 @@
             }
 
             // Envio das informações para o bot do Telegram
-            let mensagem = `Novo pedido de viagem:\nOrigem: ${origem}\nDestino: ${destino}\nCusto: R$ ${custoFinal.toFixed(2)}\nHorário: ${horario}\nWhatsApp: ${whatsapp}\nRota: https://www.google.com/maps/dir/?api=1&origin=${enderecoOrigem}&destination=${destinoLatLng}&travelmode=driving`;
+            let mensagem = `Novo pedido de viagem:\nOrigem: ${origem}\nDestino: ${destino}\nCusto: R$ ${custoFinal.toFixed(2)}\nHorário: ${horario}\nWhatsApp: ${whatsapp}\nRota: <a href="https://www.google.com/maps/dir/?api=1&origin=${enderecoOrigem}&destination=${destinoLatLng}&travelmode=driving">Clique aqui para ver a rota</a>`;
             enviarTelegram(mensagem);
             iniciarContagemRegressiva();
         }
@@ -216,7 +215,8 @@
             const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
             const params = {
                 chat_id: chatId,
-                text: mensagem
+                text: mensagem,
+                parse_mode: 'HTML' // Permite usar HTML para formatação
             };
 
             fetch(url, {
@@ -267,36 +267,24 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
                     origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                    enderecoOrigem = `${position.coords.latitude}, ${position.coords.longitude}`;
-                    document.getElementById('origem').value = 'Localização atual';
-                    calcularRota();
+                    enderecoOrigem = "Sua localização atual"; // Para visualização
+                    document.getElementById('origem').value = enderecoOrigem;
+                    calcularRota(); // Calcular a rota automaticamente com a localização atual
                 }, () => {
-                    handleLocationError(true);
+                    alert('Erro ao obter sua localização.');
                 });
             } else {
-                handleLocationError(false);
+                alert('Geolocalização não suportada.');
             }
 
+            // Autocomplete para o destino
             autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
-            autocompleteDestino.bindTo('bounds', map);
             autocompleteDestino.addListener('place_changed', () => {
                 let place = autocompleteDestino.getPlace();
-                if (place.geometry) {
-                    destinoLatLng = place.geometry.location;
-                    calcularRota();
-                } else {
-                    alert("Por favor, selecione um local válido.");
-                }
+                destinoLatLng = place.geometry.location;
+                calcularRota();
             });
         }
-
-        function handleLocationError(browserHasGeolocation) {
-            alert(browserHasGeolocation ?
-                'Erro: O serviço de geolocalização falhou.' :
-                'Erro: Seu navegador não suporta geolocalização.');
-        }
-
-        window.onload = initMap;
     </script>
 </body>
 </html>
