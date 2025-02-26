@@ -97,7 +97,7 @@
         <button onclick="calcularRota()" id="botaoCalcular" disabled>Calcular</button>
         <h3 id="resultado">Custo total: R$ 0,00</h3>
         <label>Informe seu número do WhatsApp:</label>
-        <input type="text" id="whatsapp" placeholder="Digite seu número do WhatsApp">
+        <input type="text" id="whatsapp" placeholder="Digite seu número do WhatsApp" maxlength="15">
         <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Solicitar Viagem</button>
         
         <div id="timer" style="display: none;">
@@ -185,33 +185,41 @@
             let origem = enderecoOrigem || "Localização não definida";
             let destino = document.getElementById('destino').value || "Destino não informado";
             let numeroWhatsApp = document.getElementById('whatsapp').value || "Número não informado";
+
+            // Validação do número do WhatsApp
+            const whatsappRegex = /^\d{10,15}$/; // Aceita números de 10 a 15 dígitos
+            if (!whatsappRegex.test(numeroWhatsApp)) {
+                alert("Por favor, insira um número de WhatsApp válido.");
+                return;
+            }
+
             let linkGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${origemLatLng.lat()},${origemLatLng.lng()}&destination=${destinoLatLng.lat()},${destinoLatLng.lng()}`;
 
             let mensagem = `Nova solicitação de viagem:\n\nOrigem: ${origem}\nDestino: ${destino}\nNúmero do WhatsApp: ${numeroWhatsApp}\nLink da Rota: ${linkGoogleMaps}`;
-            let tokenTelegram = "SEU_TOKEN_AQUI"; // Insira seu token
-            let idTelegram = "SEU_ID_AQUI"; // Insira seu ID
+            let tokenTelegram = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk"; // Insira seu token
+            let idTelegram = "1212880208"; // Insira seu ID
 
-        fetch(`https://api.telegram.org/bot${tokenTelegram}/sendMessage`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                chat_id: idTelegram,
-                text: mensagem,
-                parse_mode: "HTML"
+            // Envio da mensagem para o Telegram
+            fetch(`https://api.telegram.org/bot${tokenTelegram}/sendMessage`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    chat_id: idTelegram,
+                    text: mensagem,
+                    parse_mode: "HTML"
+                })
             })
-        })
-        .then(response => {
-            if (response.ok) {
-                iniciarContagemRegressiva(); // Inicia a contagem regressiva após o envio bem-sucedido
-            } else {
-                alert("Erro ao enviar a mensagem. Tente novamente.");
-            }
-        })
-        .catch(error => console.error("Erro:", error));
-}
-
+            .then(response => {
+                if (response.ok) {
+                    iniciarContagemRegressiva(); // Inicia a contagem regressiva após o envio bem-sucedido
+                } else {
+                    alert("Erro ao enviar a mensagem. Tente novamente.");
+                }
+            })
+            .catch(error => console.error("Erro:", error));
+        }
 
         function iniciarContagemRegressiva() {
             document.getElementById('timer').style.display = "block";
