@@ -139,7 +139,6 @@
                         enderecoOrigem = place.formatted_address;
                         document.getElementById('origem').value = enderecoOrigem;
                         map.setCenter(origemLatLng);
-                        // Adiciona um marcador para a nova localização
                         new google.maps.Marker({
                             position: origemLatLng,
                             map: map,
@@ -299,6 +298,7 @@
                     if (results[0]) {
                         enderecoOrigem = results[0].formatted_address;
                         document.getElementById('origem').value = enderecoOrigem;
+                        habilitarCalcular(); // Habilita o botão calcular após obter a localização
                     } else {
                         alert('Nenhum resultado encontrado para a localização atual.');
                     }
