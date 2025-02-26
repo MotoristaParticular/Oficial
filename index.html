@@ -100,6 +100,22 @@
             font-size: 16px;
             margin-bottom: 15px;
         }
+        /* Estilo do botão para Arraial */
+        #botaoArraial {
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #botaoArraial:hover {
+            background-color: #e67e22;
+        }
+
+        /* Cor de fundo quando "Arraial" for ativado */
+        body.arraial {
+            background-color: #FFEB3B;
+        }
     </style>
 </head>
 <body>
@@ -222,7 +238,7 @@
             let numeroWhatsApp = document.getElementById('whatsapp').value || "Número não informado";
             let linkGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${origemLatLng.lat()},${origemLatLng.lng()}&destination=${destinoLatLng.lat()},${destinoLatLng.lng()}`;
 
-            let mensagem = `Nova solicitação de viagem:\nOrigem: ${origem}\nDestino: ${destino}\nNúmero do WhatsApp: ${numeroWhatsApp}\nLink da Rota: ${linkGoogleMaps}`;
+            let mensagem = `Nova solicitação de viagem:\n\nOrigem: ${origem}\nDestino: ${destino}\nNúmero do WhatsApp: ${numeroWhatsApp}\nLink da Rota: ${linkGoogleMaps}`;
 
             let tokenTelegram = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk";
             let idTelegram = "1212880208";
