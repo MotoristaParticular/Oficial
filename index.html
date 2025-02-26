@@ -100,7 +100,7 @@
         </div>
 
         <label>Origem:</label>
-        <input type="text" id="origem" placeholder="Obtendo localização..." disabled>
+        <input type="text" id="origem" placeholder="Digite ou selecione a origem" onclick="habilitarAutocompleteOrigem()">
         
         <label>Destino:</label>
         <input type="text" id="destino" placeholder="Digite o destino" oninput="habilitarCalcular()">
@@ -120,11 +120,37 @@
         let map, directionsService, directionsRenderer;
         let origemLatLng, destinoLatLng, enderecoOrigem;
         let custoFinal = 0, tempoFinal = 0;
+        let autocompleteOrigem;
 
         function habilitarCalcular() {
             let destino = document.getElementById('destino').value;
-            // Verifica se a origem já foi definida
             document.getElementById('botaoCalcular').disabled = !(origemLatLng && destino);
+        }
+
+        function habilitarAutocompleteOrigem() {
+            if (!autocompleteOrigem) {
+                autocompleteOrigem = new google.maps.places.Autocomplete(document.getElementById('origem'));
+                autocompleteOrigem.bindTo('bounds', map);
+
+                autocompleteOrigem.addListener('place_changed', () => {
+                    const place = autocompleteOrigem.getPlace();
+                    if (place.geometry) {
+                        origemLatLng = place.geometry.location;
+                        enderecoOrigem = place.formatted_address;
+                        document.getElementById('origem').value = enderecoOrigem;
+                        map.setCenter(origemLatLng);
+                        // Adiciona um marcador para a nova localização
+                        new google.maps.Marker({
+                            position: origemLatLng,
+                            map: map,
+                            title: "Origem Selecionada"
+                        });
+                        habilitarCalcular(); // Habilita o botão calcular
+                    } else {
+                        alert("Nenhum resultado encontrado para a origem.");
+                    }
+                });
+            }
         }
 
         function calcularRota() {
