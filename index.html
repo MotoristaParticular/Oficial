@@ -314,9 +314,6 @@
                         
                         // Atualiza a origem no mapa
                         new mapboxgl.Marker().setLngLat(origemLatLng).addTo(map);
-                        
-                        // Chama calcularRota somente após obter a origem
-                        calcularRota(); // Chama calcular rota após obter a origem
                     }, (error) => {
                         console.error("Erro ao obter localização:", error);
                         alert("Não foi possível obter sua localização.");
