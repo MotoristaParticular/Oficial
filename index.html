@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motoristas Particulares em Porto Seguro</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBYxWbG2g-KmXmkSds0c75Qf8vlYF-aHAQ&libraries=places,geometry" defer></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -76,7 +77,6 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        /* Estilos do timer e outras seções aqui, se necessário */
     </style>
 </head>
 <body>
@@ -109,11 +109,12 @@
     <div id="map"></div>
 
     <script>
-        let map, directionsService, directionsRenderer, custoFinal = 0, tempoFinal = 0;
-        let origemLatLng, destinoLatLng, enderecoOrigem;
-        let autocompleteDestino;
+        let map, origemLatLng, destinoLatLng, enderecoOrigem;
         let timer;
         let tempoLimite = 300; // 5 minutos em segundos
+
+        // Configurações do Mapbox
+        mapboxgl.accessToken = 'pk.eyJ1IjoicmFwaGFtYWNlZG8iLCJhIjoiY203bTk5eWtvMGdhMTJyb3ByOHQyNmE3aCJ9.DbO9NQRHPF8t2WMlGizPhw'; // Substitua pelo seu token do Mapbox
 
         function habilitarCalcular() {
             let origem = document.getElementById('origem').value;
@@ -130,20 +131,52 @@
                 return; // Evita calcular a rota se as localizações não estiverem definidas
             }
 
-            directionsService.route({
-                origin: origemLatLng,
-                destination: destinoLatLng,
-                travelMode: 'DRIVING',
-            }, (response, status) => {
-                if (status === 'OK') {
-                    directionsRenderer.setDirections(response);
-                    let tempo = response.routes[0].legs[0].duration.value / 60;
-                    let distancia = response.routes[0].legs[0].distance.value / 1000;
-                    calcularCusto(tempo, distancia);
-                } else {
-                    alert('Erro ao calcular a rota: ' + status);
-                }
-            });
+            const origem = `${origemLatLng.lng},${origemLatLng.lat}`;
+            const destino = `${destinoLatLng.lng},${destinoLatLng.lat}`;
+
+            fetch(`https://api.mapbox.com/optimized-trips/v1/mapbox/driving/${origem};${destino}?access_token=pk.eyJ1IjoicmFwaGFtYWNlZG8iLCJhIjoiY203bTk5eWtvMGdhMTJyb3ByOHQyNmE3aCJ9.DbO9NQRHPF8t2WMlGizPhw`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.routes && data.routes.length > 0) {
+                        const route = data.routes[0];
+                        const tempo = route.duration / 60; // em minutos
+                        const distancia = route.distance / 1000; // em km
+                        calcularCusto(tempo, distancia);
+
+                        // Adiciona a rota ao mapa
+                        const geojson = {
+                            type: 'Feature',
+                            geometry: {
+                                type: 'LineString',
+                                coordinates: route.geometry.coordinates
+                            }
+                        };
+
+                        // Adiciona a rota ao mapa
+                        map.addLayer({
+                            id: 'rota',
+                            type: 'line',
+                            source: {
+                                type: 'geojson',
+                                data: geojson
+                            },
+                            layout: {
+                                'line-join': 'round',
+                                'line-cap': 'round'
+                            },
+                            paint: {
+                                'line-color': '#888',
+                                'line-width': 8
+                            }
+                        });
+                    } else {
+                        alert('Erro ao calcular a rota.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao calcular a rota.');
+                });
         }
 
         function calcularCusto(tempo, distancia) {
@@ -162,10 +195,8 @@
                 adicional = 0.20;
             }
 
-            custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
+            let custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
             custoFinal *= (1 + adicional);
-            tempoFinal = tempo;
-
             document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
             document.getElementById('botaoWhatsapp').style.display = "block";
         }
@@ -177,8 +208,8 @@
                 east: -39.033176,
                 west: -39.042950
             };
-            return latLng.lat() < arraialBounds.north && latLng.lat() > arraialBounds.south &&
-                latLng.lng() < arraialBounds.east && latLng.lng() > arraialBounds.west;
+            return latLng.lat < arraialBounds.north && latLng.lat > arraialBounds.south &&
+                latLng.lng < arraialBounds.east && latLng.lng > arraialBounds.west;
         }
 
         function enviarMensagemTelegram() { 
@@ -193,9 +224,9 @@
                 return;
             }
 
-            let linkGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${origemLatLng.lat()},${origemLatLng.lng()}&destination=${destinoLatLng.lat()},${destinoLatLng.lng()}`;
+            let linkMapbox = `https://www.mapbox.com/directions/?point=${origemLatLng.lat},${origemLatLng.lng}&point=${destinoLatLng.lat},${destinoLatLng.lng}`;
 
-            let mensagem = `Nova solicitação de viagem:\n\nOrigem: ${origem}\nDestino: ${destino}\nNúmero do WhatsApp: ${numeroWhatsApp}\nLink da Rota: ${linkGoogleMaps}`;
+            let mensagem = `Nova solicitação de viagem:\n\nOrigem: ${origem}\nDestino: ${destino}\nNúmero do WhatsApp: ${numeroWhatsApp}\nLink da Rota: ${linkMapbox}`;
             let tokenTelegram = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk"; // Insira seu token
             let idTelegram = "1212880208"; // Insira seu ID
 
@@ -237,33 +268,28 @@
         }
 
         function initMap() {
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: { lat: -16.2564, lng: -39.0603 }, // Centro de Porto Seguro
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v11',
+                center: [-39.0603, -16.2564], // Centro de Porto Seguro
                 zoom: 12
             });
-            directionsRenderer.setMap(map);
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                    enderecoOrigem = `${position.coords.latitude}, ${position.coords.longitude}`;
-                    document.getElementById('origem').value = "Sua localização";
-                    calcularRota(); // Chama calcularRota para definir a origem
-                }, () => {
-                    alert("Não foi possível obter a localização.");
-                });
-            } else {
-                alert("Geolocalização não suportada pelo seu navegador.");
-            }
-
-            autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
-            autocompleteDestino.addListener('place_changed', () => {
-                let place = autocompleteDestino.getPlace();
-                if (place && place.geometry) {
-                    destinoLatLng = place.geometry.location;
-                    calcularRota();
+            map.on('load', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        origemLatLng = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        enderecoOrigem = `${position.coords.latitude}, ${position.coords.longitude}`;
+                        document.getElementById('origem').value = "Sua localização";
+                        calcularRota(); // Chama calcularRota para definir a origem
+                    }, () => {
+                        alert("Não foi possível obter a localização.");
+                    });
+                } else {
+                    alert("Geolocalização não suportada pelo seu navegador.");
                 }
             });
         }
