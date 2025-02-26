@@ -82,35 +82,10 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        .info-laterais {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            width: 20%;
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            box-sizing: border-box;
-            z-index: 0;
-        }
-        .info-laterais h3 {
-            font-size: 18px;
-            color: #fff;
-        }
-        .info-laterais p {
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-        .info-laterais .titulo {
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-        .info-laterais.left {
-            left: 0;
-        }
-        .info-laterais.right {
-            right: 0;
+        /* Estilo do timer */
+        #timer {
+            font-size: 20px;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -130,14 +105,12 @@
         <input type="text" id="destino" placeholder="Digite o destino" oninput="habilitarCalcular()">
         
         <label>Número do WhatsApp:</label>
-        <input type="text" id="numeroWhatsapp" placeholder="Digite seu número do WhatsApp">
-        
+        <input type="text" id="whatsapp" placeholder="Informe seu número de WhatsApp">
+
         <button onclick="calcularRota()" id="botaoCalcular" disabled>Calcular</button>
         <h3 id="resultado">Custo total: R$ 0,00</h3>
-        <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Enviar para Telegram</button>
-        
-        <div id="timer" style="margin-top: 20px; font-size: 18px;">Timer: 00:00</div>
-        <div id="mensagemTempoMaximo" style="font-size: 16px; color: red; margin-top: 10px;">Tempo máximo de resposta</div>
+        <div id="timer">Tempo máximo de resposta: <span id="timerValue">5:00</span></div>
+        <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Enviar Solicitação</button>
         
         <div class="Para sua Segurança e Conforto">
             <h3>Para sua Segurança e Conforto</h3>
@@ -153,7 +126,8 @@
         let map, directionsService, directionsRenderer, custoFinal = 0, tempoFinal = 0;
         let origemLatLng, destinoLatLng, enderecoOrigem;
         let autocompleteDestino;
-        let custoAdicionalArraial = 35.00; // valor para Arraial d'Ajuda
+        let custoAdicionalArraial = 0; // valor inicial para a travessia da balsa
+        let timerDuration = 5 * 60; // 5 minutos em segundos
         let timerInterval;
 
         function habilitarCalcular() {
@@ -191,68 +165,54 @@
             let valorPorMinuto = 0.75;
             let valorPorKm = 2.00;
             let adicional = 0;
-
+            
             let agora = new Date();
             let hora = agora.getHours();
             if (hora >= 18 || hora < 6) {
                 adicional = 0.20;
             }
-
+            
             custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
             custoFinal *= (1 + adicional);
-
-            // Verifica se a solicitação é para Arraial d'Ajuda
-            if (isInArraial(destinoLatLng)) {
-                custoFinal += custoAdicionalArraial; // Adiciona o custo da balsa
+            
+            // Verifica se o destino está na área de Arraial d'Ajuda (exemplo simplificado)
+            const arraialArea = new google.maps.LatLng(-16.500000, -39.066667); // Coordenadas aproximadas de Arraial d'Ajuda
+            if (destinoLatLng && destinoLatLng.distance(origemLatLng) <= 5000) { // Distância em metros, exemplo: 5 km
+                custoFinal += 35.00; // Adiciona o custo da balsa
+                custoAdicionalArraial = 35.00;
             }
-
+            
             tempoFinal = tempo;
             document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
             document.getElementById('botaoWhatsapp').style.display = "block";
-            startTimer();
+            iniciarTimer();
         }
 
-        function isInArraial(location) {
-            const arraialBounds = {
-                north: -16.16024,
-                south: -16.18024,
-                east: -39.06194,
-                west: -39.08194
-            };
-            return (
-                location.lat() >= arraialBounds.south &&
-                location.lat() <= arraialBounds.north &&
-                location.lng() >= arraialBounds.west &&
-                location.lng() <= arraialBounds.east
-            );
-        }
-
-        function startTimer() {
-            let seconds = 0;
-            clearInterval(timerInterval); // Limpa qualquer timer anterior
+        function iniciarTimer() {
+            let timerValue = document.getElementById('timerValue');
+            timerValue.innerText = "5:00"; // Reseta o timer
+            clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                seconds++;
-                document.getElementById('timer').innerText = `Timer: ${formatTime(seconds)}`;
+                timerDuration--;
+                let minutes = Math.floor(timerDuration / 60);
+                let seconds = timerDuration % 60;
+                timerValue.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                if (timerDuration <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Tempo máximo de resposta alcançado!");
+                }
             }, 1000);
         }
 
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
-        }
-
         function enviarMensagemTelegram() {
-            const numeroWhatsapp = document.getElementById('numeroWhatsapp').value;
             let origem = enderecoOrigem || "Localização não definida";
             let destino = document.getElementById('destino').value || "Destino não informado";
-            let agora = new Date();
-            let horario = agora.toLocaleTimeString();
-
-            let mensagem = `🚗 *Nova solicitação de viagem!*\n\n📍 *Origem:* ${origem}\n📍 *Destino:* ${destino}\n📱 *Número do WhatsApp:* ${numeroWhatsapp}\n💰 *Custo estimado:* R$ ${custoFinal.toFixed(2)}`;
+            let whatsappNumero = document.getElementById('whatsapp').value || "Número não informado";
 
             const botToken = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk"; 
             const chatId = "1212880208";
+            const mensagem = `🚗 *Nova solicitação de viagem!*\n\n📍 *Origem:* ${origem}\n📍 *Destino:* ${destino}\n📱 *Número WhatsApp:* ${whatsappNumero}\n💰 *Custo estimado:* R$ ${custoFinal.toFixed(2)}`;
+
             const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
             fetch(url, {
@@ -278,7 +238,7 @@
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 15,
-                center: {lat: -23.55052, lng: -46.633308},
+                center: {lat: -16.5, lng: -39.06}, // Centro da região
                 styles: []
             });
             directionsService = new google.maps.DirectionsService();
@@ -292,30 +252,26 @@
 
             autocompleteDestino.addListener('place_changed', () => {
                 let place = autocompleteDestino.getPlace();
-                if (!place.geometry) {
-                    return;
+                if (place.geometry) {
+                    destinoLatLng = place.geometry.location;
+                    calcularRota(); // Calcular a rota ao selecionar um lugar
                 }
-                destinoLatLng = place.geometry.location;
             });
 
+            // Obtendo a localização atual do usuário
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((position) => {
                     origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                    let geocoder = new google.maps.Geocoder();
-                    geocoder.geocode({'location': origemLatLng}, (results, status) => {
-                        if (status === 'OK') {
-                            enderecoOrigem = results[0].formatted_address;
-                            document.getElementById('origem').value = enderecoOrigem;
-
-                            // Atualiza o centro do mapa para a localização do usuário
-                            map.setCenter(origemLatLng);
-                        }
-                    });
+                    enderecoOrigem = "Localização do usuário: " + position.coords.latitude + ", " + position.coords.longitude;
+                    document.getElementById('origem').value = enderecoOrigem;
+                    map.setCenter(origemLatLng);
                 });
+            } else {
+                alert("Geolocalização não é suportada por este navegador.");
             }
         }
 
-        window.onload = initMap;
-    </script
+        window.initMap = initMap;
+    </script>
 </body>
 </html>
