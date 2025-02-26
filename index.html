@@ -127,55 +127,67 @@
         }
 
         function calcularRota() {
-            if (!origemLatLng || !destinoLatLng) {
-                return; // Evita calcular a rota se as localizações não estiverem definidas
-            }
+            const destino = document.getElementById('destino').value;
 
-            const origem = `${origemLatLng.lng},${origemLatLng.lat}`;
-            const destino = `${destinoLatLng.lng},${destinoLatLng.lat}`;
-
-            fetch(`https://api.mapbox.com/optimized-trips/v1/mapbox/driving/${origem};${destino}?access_token=pk.eyJ1IjoicmFwaGFtYWNlZG8iLCJhIjoiY203bTk5eWtvMGdhMTJyb3ByOHQyNmE3aCJ9.DbO9NQRHPF8t2WMlGizPhw`)
+            // Obtendo as coordenadas do destino usando a API do Mapbox
+            fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destino)}.json?access_token=SEU_ACCESS_TOKEN_AQUI`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.routes && data.routes.length > 0) {
-                        const route = data.routes[0];
-                        const tempo = route.duration / 60; // em minutos
-                        const distancia = route.distance / 1000; // em km
-                        calcularCusto(tempo, distancia);
+                    if (data.features && data.features.length > 0) {
+                        destinoLatLng = data.features[0].geometry.coordinates;
+                        const origem = `${origemLatLng.lng},${origemLatLng.lat}`;
+                        const destinoStr = `${destinoLatLng[0]},${destinoLatLng[1]}`;
 
-                        // Adiciona a rota ao mapa
-                        const geojson = {
-                            type: 'Feature',
-                            geometry: {
-                                type: 'LineString',
-                                coordinates: route.geometry.coordinates
-                            }
-                        };
+                        fetch(`https://api.mapbox.com/optimized-trips/v1/mapbox/driving/${origem};${destinoStr}?access_token=SEU_ACCESS_TOKEN_AQUI`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.routes && data.routes.length > 0) {
+                                    const route = data.routes[0];
+                                    const tempo = route.duration / 60; // em minutos
+                                    const distancia = route.distance / 1000; // em km
+                                    calcularCusto(tempo, distancia);
 
-                        // Adiciona a rota ao mapa
-                        map.addLayer({
-                            id: 'rota',
-                            type: 'line',
-                            source: {
-                                type: 'geojson',
-                                data: geojson
-                            },
-                            layout: {
-                                'line-join': 'round',
-                                'line-cap': 'round'
-                            },
-                            paint: {
-                                'line-color': '#888',
-                                'line-width': 8
-                            }
-                        });
+                                    // Adiciona a rota ao mapa
+                                    const geojson = {
+                                        type: 'Feature',
+                                        geometry: {
+                                            type: 'LineString',
+                                            coordinates: route.geometry.coordinates
+                                        }
+                                    };
+
+                                    // Adiciona a rota ao mapa
+                                    map.addLayer({
+                                        id: 'rota',
+                                        type: 'line',
+                                        source: {
+                                            type: 'geojson',
+                                            data: geojson
+                                        },
+                                        layout: {
+                                            'line-join': 'round',
+                                            'line-cap': 'round'
+                                        },
+                                        paint: {
+                                            'line-color': '#888',
+                                            'line-width': 8
+                                        }
+                                    });
+                                } else {
+                                    alert('Erro ao calcular a rota.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Erro:', error);
+                                alert('Erro ao calcular a rota.');
+                            });
                     } else {
-                        alert('Erro ao calcular a rota.');
+                        alert('Destino não encontrado.');
                     }
                 })
                 .catch(error => {
-                    console.error('Erro:', error);
-                    alert('Erro ao calcular a rota.');
+                    console.error('Erro ao buscar coordenadas do destino:', error);
+                    alert('Erro ao buscar coordenadas do destino.');
                 });
         }
 
@@ -208,8 +220,8 @@
                 east: -39.033176,
                 west: -39.042950
             };
-            return latLng.lat < arraialBounds.north && latLng.lat > arraialBounds.south &&
-                latLng.lng < arraialBounds.east && latLng.lng > arraialBounds.west;
+            return latLng[1] < arraialBounds.north && latLng[1] > arraialBounds.south &&
+                latLng[0] < arraialBounds.east && latLng[0] > arraialBounds.west;
         }
 
         function enviarMensagemTelegram() { 
@@ -224,7 +236,7 @@
                 return;
             }
 
-            let linkMapbox = `https://www.mapbox.com/directions/?point=${origemLatLng.lat},${origemLatLng.lng}&point=${destinoLatLng.lat},${destinoLatLng.lng}`;
+            let linkMapbox = `https://www.mapbox.com/directions/?point=${origemLatLng.lat},${origemLatLng.lng}&point=${destinoLatLng[1]},${destinoLatLng[0]}`;
 
             let mensagem = `Nova solicitação de viagem:\n\nOrigem: ${origem}\nDestino: ${destino}\nNúmero do WhatsApp: ${numeroWhatsApp}\nLink da Rota: ${linkMapbox}`;
             let tokenTelegram = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk"; // Insira seu token
