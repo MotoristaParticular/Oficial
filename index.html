@@ -172,31 +172,27 @@
         }
 
         function calcularRota() {
-    // Verificar se os pontos de origem e destino foram definidos
-    if (!origemLatLng || !destinoLatLng) {
-        alert("Por favor, defina tanto a origem quanto o destino.");
-        return;
-    }
+            if (!origemLatLng || !destinoLatLng) {
+                return; // Evita mostrar a mensagem ao carregar a página
+            }
 
-    // Chama o serviço de direções apenas se ambos os pontos estiverem definidos
-    directionsService.route({
-        origin: origemLatLng,
-        destination: destinoLatLng,
-        travelMode: 'DRIVING',
-    }, (response, status) => {
-        if (status === 'OK') {
-            directionsRenderer.setDirections(response);
+            directionsService.route({
+                origin: origemLatLng,
+                destination: destinoLatLng,
+                travelMode: 'DRIVING',
+            }, (response, status) => {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(response);
 
-            let tempo = response.routes[0].legs[0].duration.value / 60;
-            let distancia = response.routes[0].legs[0].distance.value / 1000;
+                    let tempo = response.routes[0].legs[0].duration.value / 60;
+                    let distancia = response.routes[0].legs[0].distance.value / 1000;
 
-            calcularCusto(tempo, distancia);
-        } else {
-            alert('Erro ao calcular a rota: ' + status);
+                    calcularCusto(tempo, distancia);
+                } else {
+                    alert('Erro ao calcular a rota: ' + status);
+                }
+            });
         }
-    });
-}
-
 
         function calcularCusto(tempo, distancia) {
             let valorInicial = 5.00;
@@ -294,11 +290,10 @@
             directionsService = new google.maps.DirectionsService();
             directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
 
-            const autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
+            autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById('destino'));
             navigator.geolocation.getCurrentPosition((position) => {
                 origemLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
                 obterEndereco(origemLatLng);
-                document.getElementById('origem').value = "Obtendo localização...";
                 calcularRota();
             }, () => {
                 handleLocationError(true);
