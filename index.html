@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motoristas Particulares em Porto Seguro</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVtPcveDQB12NmuJvy8LGuVN52vczb47E&libraries=places,geometry" defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVtPcveDQB12NmuJvy8LGuVN52vczb47E&libraries=places" defer></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,8 +13,6 @@
             text-align: center;
             margin: 0;
             padding: 0;
-            overflow-y: auto;
-            transition: background-color 0.5s ease;
         }
         .container {
             max-width: 500px;
@@ -23,9 +21,6 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            position: relative;
-            z-index: 1;
-            margin-bottom: 20px;
         }
         h2 {
             color: #4CAF50;
@@ -60,60 +55,10 @@
             background-color: #45a049;
         }
         #map {
-            width: 80%;
+            width: 100%;
             height: 250px;
-            margin: 20px auto;
+            margin: 20px 0;
         }
-        h3 {
-            font-size: 18px;
-            color: #333;
-        }
-        #botaoWhatsapp {
-            background-color: #25D366;
-        }
-        #botaoWhatsapp:hover {
-            background-color: #128C7E;
-        }
-        .valores-justos {
-            margin-top: 20px;
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .info-laterais {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            width: 20%;
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            box-sizing: border-box;
-            z-index: 0;
-        }
-        .info-laterais h3 {
-            font-size: 18px;
-            color: #fff;
-        }
-        .info-laterais p {
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-        .info-laterais .titulo {
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-        .info-laterais.left {
-            left: 0;
-        }
-        .info-laterais.right {
-            right: 0;
-        }
-
-        /* Estilo do timer */
         #timer {
             font-weight: bold;
             font-size: 20px;
@@ -124,12 +69,6 @@
 <body>
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
-        <div class="informacoes-adicionais">
-            <p>Os valores informados consideram o tempo perdido em lentidões e engarrafamentos.</p>
-            <p>O valor apresentado reflete a qualidade do serviço oferecido.</p>
-            <p>O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</p>
-        </div>
-
         <label>Origem:</label>
         <input type="text" id="origem" placeholder="Obtendo localização..." disabled>
         
@@ -144,13 +83,6 @@
         <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Enviar Solicitação</button>
         
         <div id="timer">Tempo máximo de resposta: <span id="tempoMaximo">5:00</span></div>
-        
-        <div class="Para sua Segurança e Conforto">
-            <h3>Para sua Segurança e Conforto</h3>
-            <p><strong>Veículos limpos.</strong></p>
-            <p><strong>Ar Condicionado Ligado.</strong></p>
-            <p><strong>Cuidado e Atenção durante o Trajeto.</strong></p>
-        </div>
     </div>
 
     <div id="map"></div>
@@ -159,7 +91,6 @@
         let map, directionsService, directionsRenderer, custoFinal = 0, tempoFinal = 0;
         let origemLatLng, destinoLatLng, enderecoOrigem;
         let autocompleteDestino;
-        let custoAdicionalArraial = 0; // será atualizado se destino for Arraial d'Ajuda
         let timer;
         let tempoRestante = 300; // 5 minutos em segundos
 
@@ -198,8 +129,6 @@
         }
 
         function isArraial(latLng) {
-            // Verifica se a latitude e longitude estão dentro da área de Arraial d'Ajuda
-            // (aqui você pode usar coordenadas específicas para definir a área de Arraial)
             const arraialBounds = {
                 north: -16.1462,
                 south: -16.1856,
@@ -259,8 +188,6 @@
             let origem = enderecoOrigem || "Localização não definida";
             let destino = document.getElementById('destino').value || "Destino não informado";
             let numeroWhatsapp = document.getElementById('numeroWhatsapp').value || "Número não informado";
-            let agora = new Date();
-            let horario = agora.toLocaleTimeString();
 
             let mensagem = `🚗 *Nova solicitação de viagem!*\n\n📍 *Origem:* ${origem}\n📍 *Destino:* ${destino}\n💰 *Custo estimado:* R$ ${custoFinal.toFixed(2)}\n📱 *Número do WhatsApp:* ${numeroWhatsapp}`;
 
