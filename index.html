@@ -16,6 +16,26 @@
             overflow-y: auto;
             transition: background-color 0.5s ease;
         }
+        .header-bar {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            font-size: 14px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .header-text {
+            display: inline-block;
+            animation: marquee 15s linear infinite;
+        }
+        @keyframes marquee {
+            from { transform: translateX(100%); }
+            to { transform: translateX(-100%); }
+        }
         .container {
             max-width: 500px;
             margin: auto;
@@ -25,48 +45,22 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             position: relative;
             z-index: 1;
+            margin-top: 50px;
             margin-bottom: 20px;
         }
         h2 {
             color: #4CAF50;
         }
-        label {
-            display: block;
-            margin: 10px 0;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        input, button {
-            width: 100%;
-            margin: 10px 0;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #333;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #map {
-            width: 80%;
-            height: 250px;
-            margin: 20px auto;
-        }
     </style>
 </head>
 <body>
+    <div class="header-bar">
+        <span class="header-text">Os valores informados consideram o tempo perdido em lentidões e engarrafamentos. O valor apresentado reflete a qualidade do serviço oferecido. O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</span>
+    </div>
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
         <label>Origem:</label>
-        <input type="text" id="origem" placeholder="Obtendo localização..." onclick="permitirAlterarOrigem()">
+        <input type="text" id="origem" placeholder="Obtendo localização...">
         
         <label>Destino:</label>
         <input type="text" id="destino" placeholder="Digite o destino">
@@ -82,32 +76,6 @@
     </div>
     <div id="map"></div>
     <script>
-        function solicitarLocalizacao() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(posicao => {
-                    let latlng = new google.maps.LatLng(posicao.coords.latitude, posicao.coords.longitude);
-                    let geocoder = new google.maps.Geocoder();
-                    geocoder.geocode({'location': latlng}, function(results, status) {
-                        if (status === 'OK' && results[0]) {
-                            document.getElementById('origem').value = results[0].formatted_address;
-                        }
-                    });
-                });
-            } else {
-                alert("Geolocalização não suportada pelo navegador.");
-            }
-        }
-
-        function permitirAlterarOrigem() {
-            document.getElementById('origem').removeAttribute('disabled');
-        }
-
-        function configurarAutocomplete() {
-            let options = { componentRestrictions: { country: "BR" } };
-            new google.maps.places.Autocomplete(document.getElementById("origem"), options);
-            new google.maps.places.Autocomplete(document.getElementById("destino"), options);
-        }
-
         function calcularRota() {
             let origem = document.getElementById("origem").value;
             let destino = document.getElementById("destino").value;
@@ -126,46 +94,66 @@
                 if (status === 'OK') {
                     let distancia = response.rows[0].elements[0].distance.value / 1000;
                     let duracao = response.rows[0].elements[0].duration.value / 60;
+                    
+                    if (destino.toLowerCase().includes("arraial d'ajuda")) {
+                        duracao += 30;
+                    }
+                    
                     calcularCusto(duracao, distancia);
                 } else {
                     alert("Erro ao calcular a rota: " + status);
                 }
             });
         }
-        
-        function calcularCusto(tempo, distancia) {
-            let valorInicial = 5.00;
-            let valorPorMinuto = 0.75;
-            let valorPorKm = 2.00;
-            let custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
-            document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
-            document.getElementById('botaoWhatsapp').style.display = "block";
+
+        function calcularCusto(duracao, distancia) {
+            let custoBase = 5.00;
+            let custoPorKm = 2.00;
+            let custoPorMinuto = 0.50;
+            let custoTotal = custoBase + (distancia * custoPorKm) + (duracao * custoPorMinuto);
+            document.getElementById("resultado").innerText = `Custo total: R$ ${custoTotal.toFixed(2)}`;
+            document.getElementById("botaoWhatsapp").style.display = "block";
         }
-        
+
         function enviarMensagemTelegram() {
+            let whatsapp = document.getElementById("whatsapp").value;
+            if (!whatsapp) {
+                alert("Por favor, informe seu número do WhatsApp.");
+                return;
+            }
+            
             let origem = document.getElementById("origem").value;
             let destino = document.getElementById("destino").value;
             let custo = document.getElementById("resultado").innerText;
-            let whatsapp = document.getElementById("whatsapp").value;
-            let mapUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
-            let mensagem = `Nova solicitação de viagem:\nOrigem: ${origem}\nDestino: ${destino}\n${custo}\nWhatsApp: ${whatsapp}\nMapa: ${mapUrl}`;
+            let linkMaps = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}`;
             
-            let botToken = '7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk';
-            let chatId = '1212880208';
-            let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(mensagem)}`;
+            let mensagem = `Nova solicitação de viagem:%0AOrigem: ${origem}%0ADestino: ${destino}%0ACusto: ${custo}%0ALink do Google Maps: ${linkMaps}%0AWhatsApp do cliente: ${whatsapp}`;
+            let botToken = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk";
+            let chatId = "1212880208";
             
-            fetch(url).then(response => {
-                if (response.ok) {
-                    alert("Solicitação enviada com sucesso!");
+            let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${mensagem}`;
+            fetch(url).then(response => response.json()).then(data => {
+                if (data.ok) {
+                    iniciarTimer();
                 } else {
-                    alert("Erro ao enviar solicitação.");
+                    alert("Erro ao enviar a mensagem para o Telegram.");
                 }
             });
         }
-        
-        window.onload = function() {
-            solicitarLocalizacao();
-            configurarAutocomplete();
+
+        function iniciarTimer() {
+            let tempo = 300;
+            let timerDisplay = document.getElementById("contagem-regressiva");
+            document.getElementById("timer").style.display = "block";
+            let intervalo = setInterval(() => {
+                let minutos = Math.floor(tempo / 60);
+                let segundos = tempo % 60;
+                timerDisplay.innerText = `Tempo restante: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
+                if (tempo <= 0) {
+                    clearInterval(intervalo);
+                }
+                tempo--;
+            }, 1000);
         }
     </script>
 </body>
