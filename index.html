@@ -216,12 +216,11 @@
         function verificarBalsa(result) {
             let passos = result.routes[0].legs[0].steps;
             passos.forEach(passo => {
-                if (passo.instructions.includes("balsa")) {
+                if (passo.instructions.toLowerCase().includes("balsa") || passo.instructions.toLowerCase().includes("ferry")) {
                     alert("A rota inclui uma travessia de balsa para Arraial d'Ajuda.");
                 }
             });
         }
-
         function calcularCusto(duracao, distancia) {
             let custoBase = 5.00;
             let custoPorKm = 2.00;
@@ -231,20 +230,9 @@
             document.getElementById("botaoWhatsapp").style.display = "block";
         }
 
-        function iniciarBarraProgresso() {
-            let progressBar = document.getElementById("progress");
-            progressBar.style.width = "100%";
-            setTimeout(() => progressBar.style.width = "0%", 5000);
-        }
-
-        function exibirFraseMotivacional() {
-            let index = Math.floor(Math.random() * frasesMotivacionais.length);
-            document.getElementById("motivacional").innerText = frasesMotivacionais[index];
-        }
-
         window.onload = function() {
             initMap();
-            obterLocalizacao();
+            obterLocalizacaoAtual();
         };
     </script>
 </body>
