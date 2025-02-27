@@ -53,13 +53,35 @@
     </div>
     <div id="map"></div>
     <script>
-        let map;
+        let map, autocompleteOrigem, autocompleteDestino;
 
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 12,
                 center: { lat: -16.444, lng: -39.065 } 
             });
+
+            autocompleteOrigem = new google.maps.places.Autocomplete(document.getElementById("origem"));
+            autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById("destino"));
+        }
+
+        function obterLocalizacaoAtual() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    let geocoder = new google.maps.Geocoder();
+                    let latlng = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    geocoder.geocode({ location: latlng }, function(results, status) {
+                        if (status === 'OK') {
+                            if (results[0]) {
+                                document.getElementById("origem").value = results[0].formatted_address;
+                            }
+                        }
+                    });
+                });
+            }
         }
 
         function calcularRota() {
@@ -115,8 +137,8 @@
             let linkMaps = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}`;
             
             let mensagem = `Nova solicitação de viagem:%0AOrigem: ${origem}%0ADestino: ${destino}%0ACusto: ${custo}%0ALink do Google Maps: ${linkMaps}%0AWhatsApp do cliente: ${whatsapp}`;
-            let botToken = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk";
-            let chatId = "1212880208";
+            let botToken = "SEU_BOT_TOKEN";
+            let chatId = "SEU_CHAT_ID";
             
             let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${mensagem}`;
             fetch(url).then(response => response.json()).then(data => {
@@ -128,22 +150,10 @@
             });
         }
 
-        function iniciarTimer() {
-            let tempo = 300;
-            let timerDisplay = document.getElementById("contagem-regressiva");
-            document.getElementById("timer").style.display = "block";
-            let intervalo = setInterval(() => {
-                let minutos = Math.floor(tempo / 60);
-                let segundos = tempo % 60;
-                timerDisplay.innerText = `Tempo restante: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
-                if (tempo <= 0) {
-                    clearInterval(intervalo);
-                }
-                tempo--;
-            }, 1000);
-        }
-
-        window.onload = initMap;
+        window.onload = function() {
+            initMap();
+            obterLocalizacaoAtual();
+        };
     </script>
 </body>
 </html>
