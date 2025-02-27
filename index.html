@@ -72,32 +72,52 @@
             height: 300px;
             margin-top: 10px;
         }
-        .message-bar {
-            background-color: #444;
+        .mensagem-barra {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
             color: white;
             text-align: center;
-            padding: 10px;
-            font-size: 14px;
-            font-weight: bold;
-            border-bottom: 3px solid #4CAF50;
+            font-size: 16px;
+            padding: 10px 0;
+            z-index: 1000;
+            overflow: hidden;
+            white-space: nowrap;
         }
 
+        .mensagem-conteudo {
+            display: inline-block;
+            padding-left: 100%;
+            animation: rolarMensagem 15s linear infinite;
+        }
+
+        @keyframes rolarMensagem {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(-100%);
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="message-bar">
-        <p>Os valores informados consideram o tempo perdido em lentidões e engarrafamentos.</p>
-        <p>O valor apresentado reflete a qualidade do serviço oferecido.</p>
-        <p>O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</p>
+    <div class="mensagem-barra">
+    <div class="mensagem-conteudo">
+        Os valores informados consideram o tempo perdido em lentidões e engarrafamentos. 
+        O valor apresentado reflete a qualidade do serviço oferecido. 
+        O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.
     </div>
-
+</div>
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
 
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
         <label>Origem:</label>
-        <input type="text" id="origem" placeholder="Obtendo localização...">
+        <input type="text" id="origem" placeholder="Obtendo localização..." onclick="this.select();">
         
         <label>Destino:</label>
         <input type="text" id="destino" placeholder="Digite o destino">
@@ -123,13 +143,6 @@
     <div id="map"></div>
     <script>
         let map, autocompleteOrigem, autocompleteDestino;
-        const frasesMotivacionais = [
-            "A viagem de mil milhas começa com um único passo.",
-            "O caminho certo é aquele que faz você feliz.",
-            "Cada quilômetro percorrido é uma nova história para contar.",
-            "Viajar é descobrir que todos estão errados sobre outros países."
-        ];
-
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 12,
@@ -170,31 +183,30 @@
             });
         }
         function obterLocalizacao() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function (position) {
-            let latlng = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-            };
-            let geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ location: latlng }, function (results, status) {
-                if (status === "OK") {
-                    if (results[0]) {
-                        document.getElementById("origem").value = results[0].formatted_address;
-                    } else {
-                        alert("Endereço não encontrado.");
-                    }
-                } else {
-                    alert("Erro ao obter localização: " + status);
-                }
-            });
-        }, function () {
-            alert("Erro ao acessar localização. Digite manualmente.");
-        });
-    } else {
-        alert("Geolocalização não suportada pelo seu navegador.");
-    }
-}
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    let latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                    let geocoder = new google.maps.Geocoder();
+
+                    geocoder.geocode({ 'location': latlng }, function(results, status) {
+                        if (status === 'OK') {
+                            if (results[0]) {
+                                document.getElementById("origem").value = results[0].formatted_address;
+                            } else {
+                                document.getElementById("origem").placeholder = "Localização não encontrada";
+                            }
+                        } else {
+                            document.getElementById("origem").placeholder = "Erro ao obter localização";
+                        }
+                    });
+                }, function() {
+                    document.getElementById("origem").placeholder = "Permissão negada";
+                });
+            } else {
+                document.getElementById("origem").placeholder = "Geolocalização não suportada";
+            }
+        }
+
 
         function verificarBalsa(result) {
             let passos = result.routes[0].legs[0].steps;
@@ -227,6 +239,7 @@
 
         window.onload = function() {
             initMap();
+            obterLocalizacao();
         };
     </script>
 </body>
