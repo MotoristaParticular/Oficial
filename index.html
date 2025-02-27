@@ -125,8 +125,6 @@
         <button onclick="calcularRota()">Calcular</button>
         <h3 id="resultado">Custo total: R$ 0,00</h3>
         
-        <div class="progress-bar">
-            <div class="progress" id="progress"></div>
         </div>
         
         <p class="motivacional" id="motivacional"></p>
@@ -143,15 +141,6 @@
     <div id="map"></div>
     <script>
         let map, autocompleteOrigem, autocompleteDestino;
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 12,
-                center: { lat: -16.444, lng: -39.065 } 
-            });
-            autocompleteOrigem = new google.maps.places.Autocomplete(document.getElementById("origem"));
-            autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById("destino"));
-        }
-
         function calcularRota() {
             let origem = document.getElementById("origem").value;
             let destino = document.getElementById("destino").value;
@@ -182,31 +171,47 @@
                 }
             });
         }
-        function obterLocalizacao() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    let latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                    let geocoder = new google.maps.Geocoder();
+              function obterLocalizacaoAtual() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+              function (position) {
+                let latlng = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
 
-                    geocoder.geocode({ 'location': latlng }, function(results, status) {
-                        if (status === 'OK') {
-                            if (results[0]) {
-                                document.getElementById("origem").value = results[0].formatted_address;
-                            } else {
-                                document.getElementById("origem").placeholder = "Localização não encontrada";
-                            }
+                let geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ location: latlng }, function (results, status) {
+                    if (status === "OK") {
+                        if (results[0]) {
+                            document.getElementById("origem").value = results[0].formatted_address;
                         } else {
-                            document.getElementById("origem").placeholder = "Erro ao obter localização";
+                            alert("Não foi possível encontrar o endereço.");
                         }
-                    });
-                }, function() {
-                    document.getElementById("origem").placeholder = "Permissão negada";
+                    } else {
+                        alert("Erro ao buscar endereço: " + status);
+                    }
                 });
-            } else {
-                document.getElementById("origem").placeholder = "Geolocalização não suportada";
+            },
+            function () {
+                alert("Erro ao obter a localização.");
             }
-        }
+        );
+    } else {
+        alert("Geolocalização não é suportada pelo seu navegador.");
+    }
+}
 
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 12,
+                center: { lat: -16.444, lng: -39.065 }
+            });
+            autocompleteOrigem = new google.maps.places.Autocomplete(document.getElementById("origem"));
+            autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById("destino"));
+
+            obterLocalizacaoAtual(); // Chama a função ao carregar o mapa
+        }
 
         function verificarBalsa(result) {
             let passos = result.routes[0].legs[0].steps;
