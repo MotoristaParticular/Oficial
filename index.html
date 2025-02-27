@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motoristas Particulares em Porto Seguro</title>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet' />
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=SEU_API_KEY&libraries=places"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,166 +64,81 @@
             height: 250px;
             margin: 20px auto;
         }
-        h3 {
-            font-size: 18px;
-            color: #333;
-        }
-        .valores-justos {
-            margin-top: 20px;
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .mensagem {
-            margin-top: 10px;
-            color: red;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
-        <div class="informacoes-adicionais">
-            <p>Os valores informados consideram o tempo perdido em lentidões e engarrafamentos.</p>
-            <p>O valor apresentado reflete a qualidade do serviço oferecido.</p>
-            <p>O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</p>
-        </div>
-
         <label>Origem:</label>
-        <input type="text" id="origem" placeholder="Obtendo localização..." onclick="habilitarAlterarOrigem()" disabled>
+        <input type="text" id="origem" placeholder="Obtendo localização..." disabled>
         
         <label>Destino:</label>
-        <input type="text" id="destino" placeholder="Digite o destino" oninput="habilitarCalcular()">
+        <input type="text" id="destino" placeholder="Digite o destino">
         
-        <button onclick="calcularRota()" id="botaoCalcular" disabled>Calcular</button>
+        <button onclick="calcularRota()">Calcular</button>
         <h3 id="resultado">Custo total: R$ 0,00</h3>
         <label>Informe seu número do WhatsApp:</label>
-        <input type="text" id="whatsapp" placeholder="Digite seu número do WhatsApp" maxlength="15" oninput="validarWhatsApp()">
-        <div class="mensagem" id="mensagemWhatsApp"></div>
+        <input type="text" id="whatsapp" placeholder="Digite seu número do WhatsApp" maxlength="15">
         <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Solicitar Viagem</button>
-        
         <div id="timer" style="display: none;">
             <h3 id="contagem-regressiva">Tempo restante: 5:00</h3>
-            <p>Em até 5 minutos responderemos sua solicitação.</p>
         </div>
     </div>
-
     <div id="map"></div>
-
     <script>
-        function iniciarContagemRegressiva() {
-            document.getElementById('timer').style.display = "block";
-            let contagemRegressiva = 300;
-            let timer = setInterval(() => {
-                let minutos = Math.floor(contagemRegressiva / 60);
-                let segundos = contagemRegressiva % 60;
-                document.getElementById('contagem-regressiva').innerText = `Tempo restante: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
-                contagemRegressiva--;
-                if (contagemRegressiva < 0) {
-                    clearInterval(timer);
-                    alert("O tempo para resposta expirou.");
+        function calcularRota() {
+            let origem = document.getElementById("origem").value;
+            let destino = document.getElementById("destino").value;
+            
+            if (!origem || !destino) {
+                alert("Por favor, preencha os campos de origem e destino.");
+                return;
+            }
+            
+            let service = new google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: [origem],
+                destinations: [destino],
+                travelMode: 'DRIVING',
+            }, function(response, status) {
+                if (status === 'OK') {
+                    let distancia = response.rows[0].elements[0].distance.value / 1000;
+                    let duracao = response.rows[0].elements[0].duration.value / 60;
+                    calcularCusto(duracao, distancia);
+                } else {
+                    alert("Erro ao calcular a rota: " + status);
                 }
-            }, 1000);
+            });
         }
-
+        
         function calcularCusto(tempo, distancia) {
             let valorInicial = 5.00;
             let valorPorMinuto = 0.75;
             let valorPorKm = 2.00;
-            let adicional = 0;
-            let agora = new Date();
-            let hora = agora.getHours();
-            if (hora >= 18 || hora < 6) {
-                adicional = 0.20;
-            }
             let custoFinal = valorInicial + (tempo * valorPorMinuto) + (distancia * valorPorKm);
-            custoFinal *= (1 + adicional);
             document.getElementById('resultado').innerText = `Custo total: R$ ${custoFinal.toFixed(2)}`;
             document.getElementById('botaoWhatsapp').style.display = "block";
         }
-
-        function isArraial(latLng) {
-            const arraialBounds = {
-                north: -16.207356,
-                south: -16.220085,
-                east: -39.033176,
-                west: -39.042950
-            };
-            return latLng[1] < arraialBounds.north && latLng[1] > arraialBounds.south &&
-                latLng[0] < arraialBounds.east && latLng[0] > arraialBounds.west;
-        }
-
-        function habilitarCalcular() {
-            const origem = document.getElementById("origem").value;
-            const destino = document.getElementById("destino").value;
-            document.getElementById("botaoCalcular").disabled = !(origem && destino);
-        }
-
-        function validarWhatsApp() {
-            const whatsappInput = document.getElementById("whatsapp");
-            const mensagem = document.getElementById("mensagemWhatsApp");
-            const regex = /^\+?[0-9]{10,15}$/; // Regex para validar número do WhatsApp
-            
-            if (whatsappInput.value && !regex.test(whatsappInput.value)) {
-                mensagem.innerText = "Por favor, insira um número válido do WhatsApp.";
-            } else {
-                mensagem.innerText = "";
-            }
-        }
-
-        function calcularRota() {
-            // Aqui você deve implementar a chamada à API do Mapbox para calcular a rota,
-            // obter tempo e distância, e depois chamar calcularCusto(tempo, distancia).
-            // Exemplo de como fazer uma chamada à API do Mapbox (substitua os valores conforme necessário):
-
-            const origem = document.getElementById("origem").value;
-            const destino = document.getElementById("destino").value;
-            const mapboxToken = 'pk.eyJ1IjoicmFwaGFtYWNlZG8iLCJhIjoiY203bWE5cmR4MGtlazJrcHM3ajI0ems0dyJ9.7kHw1-KpcSnC_qQyrspXIw';
-
-            const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${origem};${destino}?geometries=geojson&access_token=${mapboxToken}`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.routes && data.routes.length > 0) {
-                        const tempo = data.routes[0].duration / 60; // Tempo em minutos
-                        const distancia = data.routes[0].distance / 1000; // Distância em km
-                        calcularCusto(tempo, distancia);
-                    } else {
-                        alert("Erro ao calcular a rota.");
-                    }
-                })
-                .catch(error => {
-                    alert("Erro ao acessar a API do Mapbox.");
-                });
-        }
-
+        
         function enviarMensagemTelegram() {
             let origem = document.getElementById("origem").value;
             let destino = document.getElementById("destino").value;
             let custo = document.getElementById("resultado").innerText;
             let whatsapp = document.getElementById("whatsapp").value;
-            let mapboxUrl = `https://www.google.com/maps/dir/${origem}/${destino}`;
-            let mensagem = `Nova solicitação de viagem:\nOrigem: ${origem}\nDestino: ${destino}\n${custo}\nWhatsApp: ${whatsapp}\nMapa: ${mapboxUrl}`;
+            let mapUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
+            let mensagem = `Nova solicitação de viagem:\nOrigem: ${origem}\nDestino: ${destino}\n${custo}\nWhatsApp: ${whatsapp}\nMapa: ${mapUrl}`;
             
-            let botToken = '7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk';
-            let chatId = '1212880208';
+            let botToken = 'SEU_BOT_TOKEN_AQUI';
+            let chatId = 'SEU_CHAT_ID_AQUI';
             let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(mensagem)}`;
             
-            fetch(url)
-                .then(response => {
-                    if (response.ok) {
-                        alert("Solicitação enviada com sucesso!");
-                        iniciarContagemRegressiva();
-                    } else {
-                        alert("Erro ao enviar solicitação.");
-                    }
-                })
-                .catch(error => {
+            fetch(url).then(response => {
+                if (response.ok) {
+                    alert("Solicitação enviada com sucesso!");
+                } else {
                     alert("Erro ao enviar solicitação.");
-                });
+                }
+            });
         }
     </script>
 </body>
