@@ -67,73 +67,46 @@
             margin-top: 10px;
         }
 
-    .mensagem-barra {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        background-color: #333;
-        color: white;
-        text-align: center;
-        font-size: 16px;
-        padding: 10px 0;
-        z-index: 1000;
-    }
+        /* Barra de mensagens animada */
+        .mensagem-barra {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            font-size: 16px;
+            padding: 10px 0;
+            z-index: 1000;
+            overflow: hidden;
+            white-space: nowrap;
+        }
 
-    .mensagem-container {
-        height: 20px; /* Define um tamanho fixo para evitar sobreposição */
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+        .mensagem-container {
+            display: inline-block;
+            white-space: nowrap;
+            animation: rolarMensagem 15s linear infinite;
+        }
 
-    .mensagem-texto {
-        display: none;
-        white-space: nowrap;
-    }
-
-    .conteudo {
-        margin-top: 50px; /* Adiciona espaçamento para não sobrepor o título */
-        display: inline-block;
-        white-space: nowrap;
-        animation: rolarMensagem 15s linear infinite;
-}
-
-@keyframes rolarMensagem {
-    from {
-        transform: translateX(100%);
-    }
-    to {
-        transform: translateX(-100%);
-    }
-}
-
+        @keyframes rolarMensagem {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(-100%);
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="mensagem-barra">
     <div class="mensagem-container">
-        <span class="mensagem-texto">Os valores informados consideram o tempo perdido em lentidões e engarrafamentos.</span>
-        <span class="mensagem-texto">O valor apresentado reflete a qualidade do serviço oferecido.</span>
-        <span class="mensagem-texto">O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</span>
+        Os valores informados consideram o tempo perdido em lentidões e engarrafamentos. |
+        O valor apresentado reflete a qualidade do serviço oferecido. |
+        O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.
     </div>
 </div>
-
-<script>
-    let mensagens = document.querySelectorAll(".mensagem-texto");
-    let index = 0;
-
-    function mostrarMensagem() {
-        mensagens.forEach(mensagem => mensagem.style.display = "none");
-        mensagens[index].style.display = "inline-block";
-        index = (index + 1) % mensagens.length;
-    }
-
-    mostrarMensagem(); // Exibe a primeira mensagem imediatamente
-    setInterval(mostrarMensagem, 5000); // Alterna a cada 5 segundos
-</script>
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
 
