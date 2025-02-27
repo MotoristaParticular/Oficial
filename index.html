@@ -95,7 +95,19 @@
 
     .conteudo {
         margin-top: 50px; /* Adiciona espaçamento para não sobrepor o título */
+        display: inline-block;
+        white-space: nowrap;
+        animation: rolarMensagem 15s linear infinite;
+}
+
+@keyframes rolarMensagem {
+    from {
+        transform: translateX(100%);
     }
+    to {
+        transform: translateX(-100%);
+    }
+}
 
     </style>
 </head>
@@ -107,10 +119,6 @@
         <span class="mensagem-texto">O valor apresentado reflete a qualidade do serviço oferecido.</span>
         <span class="mensagem-texto">O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</span>
     </div>
-</div>
-
-<div class="conteudo">
-    <h2>Motoristas Particulares em Porto Seguro</h2>
 </div>
 
 <script>
