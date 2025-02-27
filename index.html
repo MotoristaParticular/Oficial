@@ -31,6 +31,25 @@
             height: 300px;
             margin-top: 10px;
         }
+        .progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+        .progress {
+            height: 10px;
+            width: 0;
+            background-color: #4CAF50;
+            transition: width 2s ease-in-out;
+        }
+        .motivacional {
+            font-style: italic;
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -44,6 +63,13 @@
         
         <button onclick="calcularRota()">Calcular</button>
         <h3 id="resultado">Custo total: R$ 0,00</h3>
+        
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        
+        <p class="motivacional" id="motivacional"></p>
+        
         <label>Informe seu número do WhatsApp:</label>
         <input type="text" id="whatsapp" placeholder="Digite seu número do WhatsApp" maxlength="15">
         <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Solicitar Viagem</button>
@@ -54,63 +80,58 @@
     <div id="map"></div>
     <script>
         let map, autocompleteOrigem, autocompleteDestino;
+        const frasesMotivacionais = [
+            "A viagem de mil milhas começa com um único passo.",
+            "O caminho certo é aquele que faz você feliz.",
+            "Cada quilômetro percorrido é uma nova história para contar.",
+            "Viajar é descobrir que todos estão errados sobre outros países."
+        ];
 
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 12,
                 center: { lat: -16.444, lng: -39.065 } 
             });
-
             autocompleteOrigem = new google.maps.places.Autocomplete(document.getElementById("origem"));
             autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById("destino"));
-        }
-
-        function obterLocalizacaoAtual() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    let geocoder = new google.maps.Geocoder();
-                    let latlng = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    geocoder.geocode({ location: latlng }, function(results, status) {
-                        if (status === 'OK') {
-                            if (results[0]) {
-                                document.getElementById("origem").value = results[0].formatted_address;
-                            }
-                        }
-                    });
-                });
-            }
         }
 
         function calcularRota() {
             let origem = document.getElementById("origem").value;
             let destino = document.getElementById("destino").value;
-            
             if (!origem || !destino) {
                 alert("Por favor, preencha os campos de origem e destino.");
                 return;
             }
-            
+
             let directionsService = new google.maps.DirectionsService();
             let directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
-
             let request = {
                 origin: origem,
                 destination: destino,
                 travelMode: 'DRIVING'
             };
-
             directionsService.route(request, function(result, status) {
                 if (status === 'OK') {
                     directionsRenderer.setDirections(result);
                     let distancia = result.routes[0].legs[0].distance.value / 1000;
                     let duracao = result.routes[0].legs[0].duration.value / 60;
+                    verificarBalsa(result);
                     calcularCusto(duracao, distancia);
+                    iniciarBarraProgresso();
+                    exibirFraseMotivacional();
                 } else {
                     alert("Erro ao calcular a rota: " + status);
+                }
+            });
+        }
+
+        function verificarBalsa(result) {
+            let passos = result.routes[0].legs[0].steps;
+            passos.forEach(passo => {
+                if (passo.instructions.includes("balsa")) {
+                    alert("A rota inclui uma travessia de balsa para Arraial d'Ajuda.");
                 }
             });
         }
@@ -124,35 +145,19 @@
             document.getElementById("botaoWhatsapp").style.display = "block";
         }
 
-        function enviarMensagemTelegram() {
-            let whatsapp = document.getElementById("whatsapp").value;
-            if (!whatsapp) {
-                alert("Por favor, informe seu número do WhatsApp.");
-                return;
-            }
-            
-            let origem = document.getElementById("origem").value;
-            let destino = document.getElementById("destino").value;
-            let custo = document.getElementById("resultado").innerText;
-            let linkMaps = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}`;
-            
-            let mensagem = `Nova solicitação de viagem:%0AOrigem: ${origem}%0ADestino: ${destino}%0ACusto: ${custo}%0ALink do Google Maps: ${linkMaps}%0AWhatsApp do cliente: ${whatsapp}`;
-            let botToken = "SEU_BOT_TOKEN";
-            let chatId = "SEU_CHAT_ID";
-            
-            let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${mensagem}`;
-            fetch(url).then(response => response.json()).then(data => {
-                if (data.ok) {
-                    iniciarTimer();
-                } else {
-                    alert("Erro ao enviar a mensagem para o Telegram.");
-                }
-            });
+        function iniciarBarraProgresso() {
+            let progressBar = document.getElementById("progress");
+            progressBar.style.width = "100%";
+            setTimeout(() => progressBar.style.width = "0%", 5000);
+        }
+
+        function exibirFraseMotivacional() {
+            let index = Math.floor(Math.random() * frasesMotivacionais.length);
+            document.getElementById("motivacional").innerText = frasesMotivacionais[index];
         }
 
         window.onload = function() {
             initMap();
-            obterLocalizacaoAtual();
         };
     </script>
 </body>
