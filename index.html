@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motoristas Particulares em Porto Seguro</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=SEU_GOOGLE_MAPS_API_KEY&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBy4zp2Bd6iYY5QPKxMjnuPHA16Zw6Gxrs&libraries=places"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -133,6 +133,8 @@
         let map, autocompleteOrigem, autocompleteDestino;
 
         function calcularRota() {
+            document.getElementById("botaoWhatsapp").style.display = "none"; // Esconde antes do cálculo
+
             let origem = document.getElementById("origem").value;
             let destino = document.getElementById("destino").value;
 
@@ -157,14 +159,16 @@
                     let distancia = result.routes[0].legs[0].distance.value / 1000;
                     let duracao = result.routes[0].legs[0].duration.value / 60;
 
+                    verificarBalsa(result); // Verifica se há balsa
                     calcularCusto(duracao, distancia);
-                    document.getElementById("botaoWhatsapp").style.display = "block";
+
+                    document.getElementById("botaoWhatsapp").style.display = "block"; // Mostra o botão apenas se a rota for calculada corretamente
                 } else {
                     alert("Erro ao calcular a rota: " + status);
                 }
             });
         }
-
+        
         function enviarParaTelegram() {
             let origem = document.getElementById("origem").value;
             let destino = document.getElementById("destino").value;
@@ -239,8 +243,9 @@
                 center: { lat: -16.444, lng: -39.065 }
             });
 
-            autocompleteOrigem = new google.maps.places.Autocomplete(document.getElementById("origem"));
-            autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById("destino"));
+            autocompleteOrigem = new google.maps.places.Autocomplete(document.getElementById("origem"), { types: ["geocode"] });
+            autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById("destino"), { types: ["geocode"] });
+
         }
         function verificarBalsa(result) {
             let passos = result.routes[0].legs[0].steps;
@@ -261,6 +266,7 @@
 
         window.onload = function() {
             initMap();
+            document.getElementById("botaoWhatsapp").style.display = "none"; // Esconde o botão ao carregar a página
         };
     </script>
 </body>
