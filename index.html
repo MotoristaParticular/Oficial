@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motoristas Particulares em Porto Seguro</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=SEU_API_KEY&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBy4zp2Bd6iYY5QPKxMjnuPHA16Zw6Gxrs&libraries=places"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -45,10 +45,6 @@
             border: 1px solid #333;
             box-sizing: border-box;
         }
-        input {
-            background-color: #333;
-            color: #fff;
-        }
         button {
             background-color: #4CAF50;
             color: white;
@@ -70,7 +66,7 @@
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
         <label>Origem:</label>
-        <input type="text" id="origem" placeholder="Obtendo localização..." disabled>
+        <input type="text" id="origem" placeholder="Obtendo localização..." onclick="permitirAlterarOrigem()">
         
         <label>Destino:</label>
         <input type="text" id="destino" placeholder="Digite o destino">
@@ -86,6 +82,32 @@
     </div>
     <div id="map"></div>
     <script>
+        function solicitarLocalizacao() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(posicao => {
+                    let latlng = new google.maps.LatLng(posicao.coords.latitude, posicao.coords.longitude);
+                    let geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({'location': latlng}, function(results, status) {
+                        if (status === 'OK' && results[0]) {
+                            document.getElementById('origem').value = results[0].formatted_address;
+                        }
+                    });
+                });
+            } else {
+                alert("Geolocalização não suportada pelo navegador.");
+            }
+        }
+
+        function permitirAlterarOrigem() {
+            document.getElementById('origem').removeAttribute('disabled');
+        }
+
+        function configurarAutocomplete() {
+            let options = { componentRestrictions: { country: "BR" } };
+            new google.maps.places.Autocomplete(document.getElementById("origem"), options);
+            new google.maps.places.Autocomplete(document.getElementById("destino"), options);
+        }
+
         function calcularRota() {
             let origem = document.getElementById("origem").value;
             let destino = document.getElementById("destino").value;
@@ -128,8 +150,8 @@
             let mapUrl = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`;
             let mensagem = `Nova solicitação de viagem:\nOrigem: ${origem}\nDestino: ${destino}\n${custo}\nWhatsApp: ${whatsapp}\nMapa: ${mapUrl}`;
             
-            let botToken = 'SEU_BOT_TOKEN_AQUI';
-            let chatId = 'SEU_CHAT_ID_AQUI';
+            let botToken = '7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk';
+            let chatId = '1212880208';
             let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(mensagem)}`;
             
             fetch(url).then(response => {
@@ -139,6 +161,11 @@
                     alert("Erro ao enviar solicitação.");
                 }
             });
+        }
+        
+        window.onload = function() {
+            solicitarLocalizacao();
+            configurarAutocomplete();
         }
     </script>
 </body>
