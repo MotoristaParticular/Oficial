@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motoristas Particulares em Porto Seguro</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBy4zp2Bd6iYY5QPKxMjnuPHA16Zw6Gxrs&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=SEU_GOOGLE_MAPS_API_KEY&libraries=places"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -61,17 +61,12 @@
             transition: width 3s ease-in-out;
         }
 
-        .motivacional {
-            font-style: italic;
-            color: #666;
-            margin-top: 10px;
-        }
-
         #map {
             width: 100%;
             height: 300px;
             margin-top: 10px;
         }
+
         .mensagem-barra {
             position: fixed;
             top: 0;
@@ -90,7 +85,7 @@
         .mensagem-conteudo {
             display: inline-block;
             padding-left: 100%;
-            animation: rolarMensagem 30s linear infinite;
+            animation: rolarMensagem 15s linear infinite;
         }
 
         @keyframes rolarMensagem {
@@ -101,6 +96,7 @@
                 transform: translateX(-100%);
             }
         }
+
     </style>
 </head>
 <body>
@@ -114,8 +110,6 @@
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
 
-    <div class="container">
-        <h2>Motoristas Particulares em Porto Seguro</h2>
         <label>Origem:</label>
         <input type="text" id="origem" placeholder="Obtendo localização..." onclick="this.select();">
         
@@ -124,111 +118,110 @@
         
         <button onclick="calcularRota()">Calcular</button>
         <h3 id="resultado">Custo total: R$ 0,00</h3>
-        
-        </div>
-        <div id="timer" style="font-size: 18px; font-weight: bold; color: red;"></div>
-        <p class="motivacional" id="motivacional"></p>
-        
+
         <label>Informe seu número do WhatsApp:</label>
         <input type="text" id="whatsapp" placeholder="Digite seu número do WhatsApp" maxlength="15">
-        <button id="botaoWhatsapp" style="display:none;" onclick="enviarMensagemTelegram()">Solicitar Viagem</button>
-        <div id="timer" style="display: none;">
-            <h3 id="contagem-regressiva">Tempo restante: 5:00</h3>
-        </div>
-        <label>Origem:</label>
-        <input type="text" id="origem" placeholder="Obtendo localização..." onfocus="obterLocalizacao()">
+        
+        <button id="botaoWhatsapp" style="display:none;" onclick="enviarParaTelegram()">Solicitar Viagem</button>
+        
+        <div id="timer" style="font-size: 18px; font-weight: bold; color: red; display: none;"></div>
     </div>
+    
     <div id="map"></div>
+
     <script>
-        <script>
-    let map, autocompleteOrigem, autocompleteDestino;
+        let map, autocompleteOrigem, autocompleteDestino;
 
-            function calcularRota() {
-                let origem = document.getElementById("origem").value;
-                let destino = document.getElementById("destino").value;
+        function calcularRota() {
+            let origem = document.getElementById("origem").value;
+            let destino = document.getElementById("destino").value;
 
-                if (!origem || !destino) {
-                    alert("Por favor, preencha os campos de origem e destino.");
-                    return;
+            if (!origem || !destino) {
+                alert("Por favor, preencha os campos de origem e destino.");
+                return;
+            }
+
+            let directionsService = new google.maps.DirectionsService();
+            let directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+
+            let request = {
+                origin: origem,
+                destination: destino,
+                travelMode: 'DRIVING'
+            };
+
+            directionsService.route(request, function(result, status) {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(result);
+                    let distancia = result.routes[0].legs[0].distance.value / 1000;
+                    let duracao = result.routes[0].legs[0].duration.value / 60;
+
+                    calcularCusto(duracao, distancia);
+                    document.getElementById("botaoWhatsapp").style.display = "block";
+                } else {
+                    alert("Erro ao calcular a rota: " + status);
                 }
+            });
+        }
 
-                let directionsService = new google.maps.DirectionsService();
-                let directionsRenderer = new google.maps.DirectionsRenderer();
-                directionsRenderer.setMap(map);
+        function enviarParaTelegram() {
+            let origem = document.getElementById("origem").value;
+            let destino = document.getElementById("destino").value;
+            let whatsapp = document.getElementById("whatsapp").value;
 
-                let request = {
-                    origin: origem,
-                    destination: destino,
-                    travelMode: 'DRIVING'
-                };
-
-                directionsService.route(request, function(result, status) {
-                    if (status === 'OK') {
-                        directionsRenderer.setDirections(result);
-                        let distancia = result.routes[0].legs[0].distance.value / 1000;
-                        let duracao = result.routes[0].legs[0].duration.value / 60;
-
-                verificarBalsa(result);
-                calcularCusto(duracao, distancia);
-                iniciarBarraProgresso();
-                exibirFraseMotivacional();
-                
-                enviarParaTelegram(origem, destino, distancia, duracao);
-            } else {
-                alert("Erro ao calcular a rota: " + status);
-            }
-        });
-    }
-
-            function enviarParaTelegram(origem, destino, distancia, duracao) {
-                const token = "SEU_BOT_TOKEN_AQUI";  // 🔴 Substitua pelo token do seu bot do Telegram
-                const chatId = "SEU_CHAT_ID_AQUI";  // 🔴 Substitua pelo chat ID para onde enviar a mensagem
-        
-        // Criar link para abrir a rota no Google Maps
-                let googleMapsLink = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}&travelmode=driving`;
-
-                let mensagem = `🚗 *Nova Solicitação de Viagem*\n\n` +
-                       `📍 *Origem:* ${origem}\n` +
-                       `📍 *Destino:* ${destino}\n` +
-                       `📏 *Distância:* ${distancia.toFixed(1)} km\n` +
-                       `⏳ *Duração:* ${Math.round(duracao)} min\n` +
-                       `🔗 [Ver rota no Google Maps](${googleMapsLink})`;
-
-                let url = `https://api.telegram.org/bot${token}/sendMessage`;
-        
-                let params = {
-                    chat_id: chatId,
-                    text: mensagem,
-                    parse_mode: "Markdown",
-                    disable_web_page_preview: true
-                };
-
-                fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(params)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.ok) {
-                        console.log("Mensagem enviada ao Telegram com sucesso!");
-                iniciarTimer();
-                    } else {
-                        console.error("Erro ao enviar para o Telegram:", data);
-                    }
-                })
-                .catch(error => console.error("Erro na requisição:", error));
+            if (!whatsapp) {
+                alert("Por favor, informe seu número do WhatsApp.");
+                return;
             }
 
-            function iniciarTimer() {
-                let tempoRestante = 300; // 5 minutos em segundos
-                let timerElement = document.getElementById("timer");
+            const token = "7827817404:AAFmoRluQLO6pj-cbFjdKKVkCiTkvfMOUUk";
+            const chatId = "1212880208";
+
+            let googleMapsLink = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}&travelmode=driving`;
+
+            let mensagem = `🚗 *Nova Solicitação de Viagem*\n\n` +
+                           `📍 *Origem:* ${origem}\n` +
+                           `📍 *Destino:* ${destino}\n` +
+                           `📲 *WhatsApp:* ${whatsapp}\n` +
+                           `🔗 [Ver rota no Google Maps](${googleMapsLink})`;
+
+            let url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+            let params = {
+                chat_id: chatId,
+                text: mensagem,
+                parse_mode: "Markdown",
+                disable_web_page_preview: true
+            };
+
+            fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(params)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    console.log("Mensagem enviada ao Telegram com sucesso!");
+                    iniciarTimer();
+                } else {
+                    console.error("Erro ao enviar para o Telegram:", data);
+                }
+            })
+            .catch(error => console.error("Erro na requisição:", error));
+        }
+
+        function iniciarTimer() {
+            let tempoRestante = 300; // 5 minutos em segundos
+            let timerElement = document.getElementById("timer");
+            timerElement.style.display = "block";
 
             function atualizarTimer() {
                 let minutos = Math.floor(tempoRestante / 60);
                 let segundos = tempoRestante % 60;
-                    timerElement.innerText = `⌛ Aguardando confirmação: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
-            
+                timerElement.innerText = `⌛ Aguardando confirmação: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
+                
                 if (tempoRestante > 0) {
                     tempoRestante--;
                     setTimeout(atualizarTimer, 1000);
@@ -240,57 +233,15 @@
             atualizarTimer();
         }
 
-    function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-            zoom: 12,
-            center: { lat: -16.444, lng: -39.065 }
-        });
-
-        autocompleteOrigem = new google.maps.places.Autocomplete(document.getElementById("origem"));
-        autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById("destino"));
-    }
-              function obterLocalizacaoAtual() {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-              function (position) {
-                let latlng = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-
-                let geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ location: latlng }, function (results, status) {
-                    if (status === "OK") {
-                        if (results[0]) {
-                            document.getElementById("origem").value = results[0].formatted_address;
-                        } else {
-                            alert("Não foi possível encontrar o endereço.");
-                        }
-                    } else {
-                        alert("Erro ao buscar endereço: " + status);
-                    }
-                });
-            },
-            function () {
-                alert("Erro ao obter a localização.");
-            }
-        );
-    } else {
-        alert("Geolocalização não é suportada pelo seu navegador.");
-    }
-}
-
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 12,
                 center: { lat: -16.444, lng: -39.065 }
             });
+
             autocompleteOrigem = new google.maps.places.Autocomplete(document.getElementById("origem"));
             autocompleteDestino = new google.maps.places.Autocomplete(document.getElementById("destino"));
-
-            obterLocalizacaoAtual(); // Chama a função ao carregar o mapa
         }
-
         function verificarBalsa(result) {
             let passos = result.routes[0].legs[0].steps;
             passos.forEach(passo => {
@@ -310,7 +261,6 @@
 
         window.onload = function() {
             initMap();
-            obterLocalizacaoAtual();
         };
     </script>
 </body>
