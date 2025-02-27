@@ -13,28 +13,6 @@
             text-align: center;
             margin: 0;
             padding: 0;
-            overflow-y: auto;
-            transition: background-color 0.5s ease;
-        }
-        .header-bar {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
-            font-size: 14px;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-        .header-text {
-            display: inline-block;
-            animation: marquee 15s linear infinite;
-        }
-        @keyframes marquee {
-            from { transform: translateX(100%); }
-            to { transform: translateX(-100%); }
         }
         .container {
             max-width: 500px;
@@ -43,20 +21,19 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            position: relative;
-            z-index: 1;
-            margin-top: 50px;
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
         h2 {
             color: #4CAF50;
         }
+        #map {
+            width: 100%;
+            height: 300px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    <div class="header-bar">
-        <span class="header-text">Os valores informados consideram o tempo perdido em lentidões e engarrafamentos. O valor apresentado reflete a qualidade do serviço oferecido. O pagamento deverá ser realizado diretamente ao motorista. Verifique as formas de pagamento aceitas.</span>
-    </div>
     <div class="container">
         <h2>Motoristas Particulares em Porto Seguro</h2>
         <label>Origem:</label>
@@ -76,6 +53,15 @@
     </div>
     <div id="map"></div>
     <script>
+        let map;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 12,
+                center: { lat: -16.444, lng: -39.065 } 
+            });
+        }
+
         function calcularRota() {
             let origem = document.getElementById("origem").value;
             let destino = document.getElementById("destino").value;
@@ -85,20 +71,21 @@
                 return;
             }
             
-            let service = new google.maps.DistanceMatrixService();
-            service.getDistanceMatrix({
-                origins: [origem],
-                destinations: [destino],
-                travelMode: 'DRIVING',
-            }, function(response, status) {
+            let directionsService = new google.maps.DirectionsService();
+            let directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+
+            let request = {
+                origin: origem,
+                destination: destino,
+                travelMode: 'DRIVING'
+            };
+
+            directionsService.route(request, function(result, status) {
                 if (status === 'OK') {
-                    let distancia = response.rows[0].elements[0].distance.value / 1000;
-                    let duracao = response.rows[0].elements[0].duration.value / 60;
-                    
-                    if (destino.toLowerCase().includes("arraial d'ajuda")) {
-                        duracao += 30;
-                    }
-                    
+                    directionsRenderer.setDirections(result);
+                    let distancia = result.routes[0].legs[0].distance.value / 1000;
+                    let duracao = result.routes[0].legs[0].duration.value / 60;
                     calcularCusto(duracao, distancia);
                 } else {
                     alert("Erro ao calcular a rota: " + status);
@@ -155,6 +142,8 @@
                 tempo--;
             }, 1000);
         }
+
+        window.onload = initMap;
     </script>
 </body>
 </html>
